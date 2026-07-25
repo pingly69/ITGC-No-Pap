@@ -15,12 +15,49 @@ async function initApp() {
   const reqId = urlParams.get('req_id');
 
   // ==========================================
-  // ROUTE B: Deep Link Approval Screens (?action=approve)
+  // STEP 1: INITIALIZE LINE LIFF & SSO (Runs for BOTH Route A and Route B)
+  // ==========================================
+  let lineUid = null;
+  let lineProfileName = null;
+
+  if (typeof liff !== 'undefined' && typeof LIFF_ID !== 'undefined' && LIFF_ID && LIFF_ID !== 'YOUR_LIFF_ID_HERE') {
+    try {
+      await liff.init({ liffId: LIFF_ID });
+      if (liff.isLoggedIn()) {
+        const profile = await liff.getProfile();
+        lineUid = profile.userId;
+        lineProfileName = profile.displayName;
+        localStorage.setItem('ITGC_LINE_UID', lineUid);
+        localStorage.setItem('ITGC_LINE_NAME', lineProfileName);
+      } else {
+        liff.login();
+        return;
+      }
+    } catch (liffErr) {
+      console.warn('LIFF Init warning:', liffErr);
+    }
+  }
+
+  // Fallback สำหรับการทดสอบในเครื่องหากเปิดแบบ Local Dev
+  if (!lineUid) {
+    lineUid = localStorage.getItem('ITGC_LINE_UID') || 'UID_DEV_IT_001';
+    lineProfileName = localStorage.getItem('ITGC_LINE_NAME') || 'IT Admin Dev';
+    localStorage.setItem('ITGC_LINE_UID', lineUid);
+    localStorage.setItem('ITGC_LINE_NAME', lineProfileName);
+  }
+
+  const userDisplayNameElem = document.getElementById('user-display-name');
+  if (userDisplayNameElem) {
+    userDisplayNameElem.innerText = lineProfileName || 'IT Staff';
+  }
+
+  // ==========================================
+  // STEP 2: ROUTE B - Deep Link Approval Screens (?action=approve)
   // ==========================================
   if (action === 'approve') {
     document.body.classList.add('deeplink-mode');
-    
-    // ซ่อน Sidebar และ Header Profile
+
+    // ซ่อน Sidebar
     const sidebar = document.getElementById('app-sidebar');
     if (sidebar) sidebar.style.display = 'none';
 
@@ -40,7 +77,7 @@ async function initApp() {
   }
 
   // ==========================================
-  // ROUTE A: Main Menu & SPA Router
+  // STEP 3: ROUTE A - Main Menu & SPA Router
   // ==========================================
   // Form 7.1 (Public Access check)
   if (form === '7_1') {
@@ -48,77 +85,39 @@ async function initApp() {
     return;
   }
 
-  // LIFF Init & SSO Check
+  // ดึงสิทธิ์ User Profile จาก Backend
+  let userProfile;
   try {
-    let lineUid = null;
-    let lineProfileName = null;
-
-    if (typeof liff !== 'undefined' && typeof LIFF_ID !== 'undefined' && LIFF_ID && LIFF_ID !== 'YOUR_LIFF_ID_HERE') {
-      try {
-        await liff.init({ liffId: LIFF_ID });
-        if (liff.isLoggedIn()) {
-          const profile = await liff.getProfile();
-          lineUid = profile.userId;
-          lineProfileName = profile.displayName;
-          localStorage.setItem('ITGC_LINE_UID', lineUid);
-          localStorage.setItem('ITGC_LINE_NAME', lineProfileName);
-        } else {
-          // หากยังไม่ได้เข้าสู่ระบบ ให้สั่ง liff.login() เพื่อเปิดหน้าจอขออนุญาตเชื่อมต่อ Profile ทันที
-          liff.login();
-          return;
-        }
-      } catch (liffErr) {
-        console.warn('LIFF Init warning:', liffErr);
-      }
-    }
-
-    // Mock Line_UID สำหรับการทดสอบในเครื่องหากเปิดแบบ Local Dev
-    if (!lineUid) {
-      lineUid = localStorage.getItem('ITGC_LINE_UID') || 'UID_DEV_IT_001';
-      lineProfileName = localStorage.getItem('ITGC_LINE_NAME') || 'IT Admin Dev';
-    }
-
-    document.getElementById('user-display-name').innerText = lineProfileName || 'IT Staff';
-
-    // ดึงสิทธิ์ User Profile จาก Backend
-    let userProfile;
-    try {
-      userProfile = await apiFetch('get_user_profile', { lineUid: lineUid });
-      window.CURRENT_USER_PROFILE = userProfile;
-    } catch (authErr) {
-      // หากไม่พบ Line_UID ใน 01_Users_Profile ให้แจ้งเตือนพร้อมแสดง Line_UID เพื่อให้นำไปใส่ใน Sheet
-      Swal.fire({
-        title: 'ไม่อนุญาตให้เข้าถึงระบบ',
-        html: `
-          <p class="text-danger fw-bold">${authErr.message}</p>
-          <hr>
-          <p class="text-start mb-1"><small>Line_UID ของคุณในขณะนี้คือ:</small></p>
-          <div class="input-group mb-3">
-            <input type="text" class="form-control" value="${lineUid}" id="my-line-uid-input" readonly>
-            <button class="btn btn-outline-primary" onclick="navigator.clipboard.writeText('${lineUid}'); alert('คัดลอก Line_UID แล้ว');">Copy</button>
-          </div>
-          <p class="text-start text-muted mb-0"><small>กรุณานำ Line_UID นี้ไปเพิ่มใน Sheet <strong>01_Users_Profile</strong> แล้วกดปุ่มลองอีกครั้งครับ</small></p>
-        `,
-        icon: 'warning',
-        allowOutsideClick: false,
-        confirmButtonText: 'ลองอีกครั้ง'
-      }).then(() => {
-        window.location.reload();
-      });
-      return;
-    }
-
-    // Render Menu ตามสิทธิ์ Scr_xx
-    renderSidebarMenu(userProfile);
-
-    // โหลดหน้าแรก หรือฟอร์มที่ระบุ
-    const defaultForm = form ? `Form_${form}.html` : 'Form_1_1.html';
-    await loadView(defaultForm);
-
-  } catch (err) {
-    console.error('Auth error:', err);
-    showAlert('ไม่มีสิทธิ์เข้าถึง', err.message || 'คุณไม่มีสิทธิ์เข้าใช้งานระบบ ITGC', 'error');
+    userProfile = await apiFetch('get_user_profile', { lineUid: lineUid });
+    window.CURRENT_USER_PROFILE = userProfile;
+  } catch (authErr) {
+    Swal.fire({
+      title: 'ไม่อนุญาตให้เข้าถึงระบบ',
+      html: `
+        <p class="text-danger fw-bold">${authErr.message}</p>
+        <hr>
+        <p class="text-start mb-1"><small>Line_UID ของคุณในขณะนี้คือ:</small></p>
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" value="${lineUid}" id="my-line-uid-input" readonly>
+          <button class="btn btn-outline-primary" onclick="navigator.clipboard.writeText('${lineUid}'); alert('คัดลอก Line_UID แล้ว');">Copy</button>
+        </div>
+        <p class="text-start text-muted mb-0"><small>กรุณานำ Line_UID นี้ไปเพิ่มใน Sheet <strong>01_Users_Profile</strong> แล้วกดปุ่มลองอีกครั้งครับ</small></p>
+      `,
+      icon: 'warning',
+      allowOutsideClick: false,
+      confirmButtonText: 'ลองอีกครั้ง'
+    }).then(() => {
+      window.location.reload();
+    });
+    return;
   }
+
+  // Render Menu ตามสิทธิ์ Scr_xx
+  renderSidebarMenu(userProfile);
+
+  // โหลดหน้าแรก หรือฟอร์มที่ระบุ
+  const defaultForm = form ? `Form_${form}.html` : 'Form_1_1.html';
+  await loadView(defaultForm);
 }
 
 /**
