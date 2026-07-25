@@ -203,7 +203,27 @@ async function loadView(viewName, params = {}) {
 
     const htmlContent = await response.text();
     const container = document.getElementById('view-container');
-    container.innerHTML = htmlContent;
+
+    // Parse HTML and extract script tags so they execute properly in SPA
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+
+    const scriptElements = Array.from(tempDiv.querySelectorAll('script'));
+    scriptElements.forEach(s => s.remove());
+
+    container.innerHTML = tempDiv.innerHTML;
+
+    // Append and execute scripts in global scope
+    scriptElements.forEach(s => {
+      const newScript = document.createElement('script');
+      if (s.src) {
+        newScript.src = s.src;
+      } else {
+        newScript.textContent = s.textContent;
+      }
+      document.body.appendChild(newScript);
+      newScript.remove();
+    });
 
     hideLoading();
 

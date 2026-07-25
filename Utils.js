@@ -10,7 +10,11 @@ function getSpreadsheet() {
   if (CONFIG.SPREADSHEET_ID && CONFIG.SPREADSHEET_ID.trim() !== '') {
     return SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   }
-  return SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    throw new Error('ยังไม่ได้กำหนด SPREADSHEET_ID ในไฟล์ config.js (กรุณาใส่ ID ของ Google Sheet ใน SPREADSHEET_ID)');
+  }
+  return ss;
 }
 
 /**
