@@ -97,11 +97,16 @@ const Mod_ChangeMgmt = {
 
     if (!req) throw new Error('ไม่พบรายการ Change Request ตาม Req_ID ที่ระบุ');
 
-    const users = readAllRows(CONFIG.SHEETS.USERS_PROFILE);
-    const currentUser = users.find(u => String(u.Line_UID).trim() === String(lineUid).trim());
+    if (!currentUser) {
+      throw new Error(`ไม่พบ Line_UID (${lineUid}) ของคุณในระบบ 01_Users_Profile กรุณาเพิ่ม Line_UID ของคุณลงใน Sheet 01_Users_Profile ก่อน`);
+    }
 
-    if (!currentUser || String(currentUser.Emp_Code).trim() !== String(req.EMP_CODE).trim()) {
-      throw new Error('คุณไม่มีสิทธิ์เข้าถึงรายการนี้ (EMP_CODE ไม่ตรงกับผู้เปิด Ticket)');
+    const reqEmpCode = String(req.EMP_CODE || '').trim().toLowerCase();
+    const userEmpCode = String(currentUser.Emp_Code || '').trim().toLowerCase();
+    const isITAdmin = String(currentUser.Scr_07 || '').trim().toLowerCase() === 'yes' || String(currentUser.Scr_07 || '').trim().toLowerCase() === 'true';
+
+    if (userEmpCode !== reqEmpCode && !isITAdmin) {
+      throw new Error(`คุณไม่มีสิทธิ์เข้าถึงรายการนี้ (EMP_CODE ของคุณในระบบคือ '${currentUser.Emp_Code}' ไม่ตรงกับผู้เปิด Ticket คือ '${req.EMP_CODE}')`);
     }
 
     return req;

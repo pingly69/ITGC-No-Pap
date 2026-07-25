@@ -111,8 +111,17 @@ const Mod_AccessControl = {
     const users = readAllRows(CONFIG.SHEETS.USERS_PROFILE);
     const currentUser = users.find(u => String(u.Line_UID).trim() === String(lineUid).trim());
 
-    if (!currentUser || String(currentUser.Emp_Code).trim() !== String(req.Emp_Code).trim()) {
-      throw new Error('คุณไม่มีสิทธิ์เข้าถึงรายการนี้ (Emp_Code ไม่ตรงกับเจ้าของรายการ)');
+    if (!currentUser) {
+      throw new Error(`ไม่พบ Line_UID (${lineUid}) ของคุณในระบบ 01_Users_Profile กรุณาเพิ่ม Line_UID ของคุณลงใน Sheet 01_Users_Profile ก่อน`);
+    }
+
+    const reqEmpCode = String(req.Emp_Code || '').trim().toLowerCase();
+    const userEmpCode = String(currentUser.Emp_Code || '').trim().toLowerCase();
+    const isITAdmin = String(currentUser.Scr_01 || '').trim().toLowerCase() === 'yes' || String(currentUser.Scr_01 || '').trim().toLowerCase() === 'true';
+
+    // อนุญาตหาก Emp_Code ตรงกัน OR เป็น IT Admin (มีสิทธิ์ Scr_01) เพื่อให้ IT สามารถทดสอบและดำเนินการแทนได้ทั้งจาก PC และ LINE
+    if (userEmpCode !== reqEmpCode && !isITAdmin) {
+      throw new Error(`คุณไม่มีสิทธิ์เข้าถึงรายการนี้ (Emp_Code ของคุณในระบบคือ '${currentUser.Emp_Code}' ไม่ตรงกับเจ้าของรายการคือ '${req.Emp_Code}')`);
     }
 
     return req;
