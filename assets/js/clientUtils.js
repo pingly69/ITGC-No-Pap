@@ -6,6 +6,9 @@
 // URL ของ GAS Web App (ปรับแต่งหลังจาก Deploy GAS Web App เป็น Executive: Me / Anyone)
 let GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyeUY4upddRnpBFINCAKMhWqe1uWkyg3mJJCGn0oHSKLzTtZsoV69WeloDQKSx03PeVaw/exec';
 
+// LINE LIFF ID
+let LIFF_ID = '2009016720-0Df5GB2w';
+
 /**
  * เรียกใช้ GAS Web App REST API ผ่าน Fetch API (ส่งแบบ text/plain ป้องกัน Preflight OPTIONS)
  */

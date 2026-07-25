@@ -53,22 +53,24 @@ async function initApp() {
     let lineUid = localStorage.getItem('ITGC_LINE_UID');
     let lineProfileName = localStorage.getItem('ITGC_LINE_NAME');
 
-    if (!lineUid && typeof liff !== 'undefined') {
+    if (typeof liff !== 'undefined' && typeof LIFF_ID !== 'undefined' && LIFF_ID) {
       try {
-        await liff.init({ liffId: "YOUR_LIFF_ID_HERE" });
+        await liff.init({ liffId: LIFF_ID });
         if (liff.isLoggedIn()) {
           const profile = await liff.getProfile();
           lineUid = profile.userId;
           lineProfileName = profile.displayName;
           localStorage.setItem('ITGC_LINE_UID', lineUid);
           localStorage.setItem('ITGC_LINE_NAME', lineProfileName);
+        } else if (liff.isInClient()) {
+          liff.login();
         }
       } catch (liffErr) {
         console.warn('LIFF Init warning:', liffErr);
       }
     }
 
-    // Mock Line_UID สำหรับการทดสอบในเครื่องหากไม่มี LIFF
+    // Mock Line_UID สำหรับการทดสอบในเครื่องหากอยู่นอก LINE LIFF
     if (!lineUid) {
       lineUid = 'UID_DEV_IT_001';
       lineProfileName = 'IT Admin Dev';
