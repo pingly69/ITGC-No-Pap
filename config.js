@@ -6,7 +6,7 @@
 // Spreadsheet Configuration
 const CONFIG = {
   // Spreadsheet ID (หากว่างไว้ จะใช้ SpreadsheetApp.getActiveSpreadsheet())
-  SPREADSHEET_ID: '',
+  SPREADSHEET_ID: '1dSMm3AT5_ge08BvNCD5gUpZGt9L62wVmfYLbOST9FXY',
 
   // Sheet Names
   SHEETS: {
