@@ -50,10 +50,10 @@ async function initApp() {
 
   // LIFF Init & SSO Check
   try {
-    let lineUid = localStorage.getItem('ITGC_LINE_UID');
-    let lineProfileName = localStorage.getItem('ITGC_LINE_NAME');
+    let lineUid = null;
+    let lineProfileName = null;
 
-    if (typeof liff !== 'undefined' && typeof LIFF_ID !== 'undefined' && LIFF_ID) {
+    if (typeof liff !== 'undefined' && typeof LIFF_ID !== 'undefined' && LIFF_ID && LIFF_ID !== 'YOUR_LIFF_ID_HERE') {
       try {
         await liff.init({ liffId: LIFF_ID });
         if (liff.isLoggedIn()) {
@@ -62,27 +62,51 @@ async function initApp() {
           lineProfileName = profile.displayName;
           localStorage.setItem('ITGC_LINE_UID', lineUid);
           localStorage.setItem('ITGC_LINE_NAME', lineProfileName);
-        } else if (liff.isInClient()) {
+        } else {
+          // หากยังไม่ได้เข้าสู่ระบบ ให้สั่ง liff.login() เพื่อเปิดหน้าจอขออนุญาตเชื่อมต่อ Profile ทันที
           liff.login();
+          return;
         }
       } catch (liffErr) {
         console.warn('LIFF Init warning:', liffErr);
       }
     }
 
-    // Mock Line_UID สำหรับการทดสอบในเครื่องหากอยู่นอก LINE LIFF
+    // Mock Line_UID สำหรับการทดสอบในเครื่องหากเปิดแบบ Local Dev
     if (!lineUid) {
-      lineUid = 'UID_DEV_IT_001';
-      lineProfileName = 'IT Admin Dev';
-      localStorage.setItem('ITGC_LINE_UID', lineUid);
-      localStorage.setItem('ITGC_LINE_NAME', lineProfileName);
+      lineUid = localStorage.getItem('ITGC_LINE_UID') || 'UID_DEV_IT_001';
+      lineProfileName = localStorage.getItem('ITGC_LINE_NAME') || 'IT Admin Dev';
     }
 
     document.getElementById('user-display-name').innerText = lineProfileName || 'IT Staff';
 
     // ดึงสิทธิ์ User Profile จาก Backend
-    const userProfile = await apiFetch('get_user_profile', { lineUid: lineUid });
-    window.CURRENT_USER_PROFILE = userProfile;
+    let userProfile;
+    try {
+      userProfile = await apiFetch('get_user_profile', { lineUid: lineUid });
+      window.CURRENT_USER_PROFILE = userProfile;
+    } catch (authErr) {
+      // หากไม่พบ Line_UID ใน 01_Users_Profile ให้แจ้งเตือนพร้อมแสดง Line_UID เพื่อให้นำไปใส่ใน Sheet
+      Swal.fire({
+        title: 'ไม่อนุญาตให้เข้าถึงระบบ',
+        html: `
+          <p class="text-danger fw-bold">${authErr.message}</p>
+          <hr>
+          <p class="text-start mb-1"><small>Line_UID ของคุณในขณะนี้คือ:</small></p>
+          <div class="input-group mb-3">
+            <input type="text" class="form-control" value="${lineUid}" id="my-line-uid-input" readonly>
+            <button class="btn btn-outline-primary" onclick="navigator.clipboard.writeText('${lineUid}'); alert('คัดลอก Line_UID แล้ว');">Copy</button>
+          </div>
+          <p class="text-start text-muted mb-0"><small>กรุณานำ Line_UID นี้ไปเพิ่มใน Sheet <strong>01_Users_Profile</strong> แล้วกดปุ่มลองอีกครั้งครับ</small></p>
+        `,
+        icon: 'warning',
+        allowOutsideClick: false,
+        confirmButtonText: 'ลองอีกครั้ง'
+      }).then(() => {
+        window.location.reload();
+      });
+      return;
+    }
 
     // Render Menu ตามสิทธิ์ Scr_xx
     renderSidebarMenu(userProfile);
