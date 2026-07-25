@@ -35,6 +35,11 @@ function handleRequest(e, httpMethod) {
     switch (action) {
 
       // --- USER AUTH & MASTER DATA ---
+      case 'setup_database': {
+        const res = setupDatabase();
+        return jsonResponse('success', res.message, res);
+      }
+
       case 'get_user_profile': {
         const auth = checkRouteAAuth(lineUid, null);
         if (!auth.allowed) return jsonResponse('error', auth.message);
