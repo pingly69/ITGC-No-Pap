@@ -1,0 +1,94 @@
+<!-- Form 4.4: Deploy Sign-off (IT นำขึ้นระบบจริง) -->
+<div class="itgc-card">
+  <div class="itgc-card-header">
+    <h1 class="itgc-card-title">
+      <i class="bi bi-cloud-upload-fill text-navy"></i>
+      Form 4.4: Deploy Sign-off (IT ยืนยันการนำขึ้นระบบ Production)
+    </h1>
+    <span class="badge bg-secondary">IT Staff Authorization</span>
+  </div>
+
+  <!-- Table of Tickets Ready for Deploy (Status = UAT-Approved) -->
+  <div class="table-responsive">
+    <table class="table table-custom align-middle" id="deploy-table">
+      <thead>
+        <tr>
+          <th>Req ID</th>
+          <th>เรื่อง (Subject)</th>
+          <th>ผู้แจ้ง</th>
+          <th>วันที่ UAT Approved</th>
+          <th>ผู้ทำ UAT Sign-off</th>
+          <th>สถานะ</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody id="deploy-table-body">
+        <tr>
+          <td colspan="7" class="text-center p-4">กำลังโหลดรายการรอ Deploy...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function init_Form_4_4() {
+  await loadDeployableTickets();
+}
+
+async function loadDeployableTickets() {
+  const tbody = document.getElementById('deploy-table-body');
+  try {
+    const reqs = await apiFetch('get_change_requests');
+    const uatApprovedReqs = reqs.filter(r => r.Status === 'UAT-Approved');
+
+    if (!uatApprovedReqs || uatApprovedReqs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-muted">ไม่พบรายการที่รอ Deploy (Status = UAT-Approved)</td></tr>';
+      return;
+    }
+
+    let html = '';
+    uatApprovedReqs.forEach(r => {
+      html += `
+        <tr>
+          <td><strong>${r.Req_ID}</strong></td>
+          <td>${r.Subject}</td>
+          <td>${r.Req_Name} (${r.EMP_CODE})</td>
+          <td><small>${r.UAT_Date || '-'}</small></td>
+          <td><small>${r.UAT_LineUID || '-'}</small></td>
+          <td><span class="badge bg-success">${r.Status}</span></td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-itgc-primary" onclick="submitDeployAction('${r.Req_ID}')">
+              <i class="bi bi-rocket-takeoff"></i> Deploy Completed
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function submitDeployAction(reqId) {
+  const result = await Swal.fire({
+    title: 'ยืนยันการ Deploy?',
+    text: `ท่านกำลังยืนยันว่ารายการ ${reqId} ได้นำขึ้นระบบ Production เรียบร้อยแล้ว`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#1E3A8A',
+    confirmButtonText: 'ยืนยัน Deploy Completed'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const res = await apiFetch('submit_deploy_signoff', { Req_ID: reqId });
+      Swal.fire('สำเร็จ!', res.message, 'success');
+      loadDeployableTickets();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+}
+</script>

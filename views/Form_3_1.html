@@ -1,0 +1,254 @@
+<!-- Form 3.1: Contract Management (CRUD) -->
+<div class="itgc-card">
+  <div class="itgc-card-header">
+    <h1 class="itgc-card-title">
+      <i class="bi bi-file-earmark-text-fill"></i>
+      Form 3.1: Contract Management (การบริหารจัดการสัญญา Outsource)
+    </h1>
+    <button class="btn btn-itgc-primary" onclick="openContractModal()">
+      <i class="bi bi-plus-circle"></i> เพิ่มสัญญาใหม่
+    </button>
+  </div>
+
+  <!-- Contract Data Table -->
+  <div class="table-responsive">
+    <table class="table table-custom align-middle" id="contract-table">
+      <thead>
+        <tr>
+          <th>เลขที่สัญญา</th>
+          <th>ผู้ให้บริการ (Vendor)</th>
+          <th>เรื่อง (Subject)</th>
+          <th>ประเภท</th>
+          <th>วันที่เริ่ม-สิ้นสุด</th>
+          <th>งบประมาณ</th>
+          <th>ผู้ประสานงาน</th>
+          <th>ไฟล์สัญญา</th>
+          <th class="text-center">จัดการ</th>
+        </tr>
+      </thead>
+      <tbody id="contract-table-body">
+        <tr>
+          <td colspan="9" class="text-center p-4">กำลังโหลดข้อมูลสัญญา...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Form Add/Edit Contract -->
+<div class="modal fade" id="contractModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-navy text-white">
+        <h5 class="modal-title" id="contractModalTitle">เพิ่มรายการสัญญาใหม่</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="contract-form" onsubmit="handleContractSubmit(event)">
+        <input type="hidden" id="contract-id-input">
+        <div class="modal-body">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">ชื่อผู้ให้บริการ (Vendor) <span class="text-danger">*</span></label>
+              <input type="text" id="contract-vendor" class="form-control" required placeholder="บริษัท XYZ จำกัด">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">เลขที่สัญญา <span class="text-danger">*</span></label>
+              <input type="text" id="contract-no" class="form-control" required placeholder="CON-2026-001">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">เรื่อง / รายละเอียดสัญญา <span class="text-danger">*</span></label>
+            <input type="text" id="contract-subject" class="form-control" required placeholder="สัญญาเช่าบริการ Cloud Server...">
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label">วันที่เริ่มสัญญา</label>
+              <input type="date" id="contract-start-date" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">วันที่สิ้นสุดสัญญา</label>
+              <input type="date" id="contract-end-date" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">รูปแบบสัญญา</label>
+              <select id="contract-type" class="form-select">
+                <option value="รายปี">รายปี</option>
+                <option value="รายเดือน">รายเดือน</option>
+                <option value="on-Demand">on-Demand</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">งบประมาณ (Budget)</label>
+              <input type="text" id="contract-budget" class="form-control" placeholder="เช่น 150,000 บาท/ปี">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">ชื่อผู้ติดต่อ/ประสานงาน</label>
+              <input type="text" id="contract-contact-name" class="form-control">
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Email ผู้ติดต่อ</label>
+              <input type="email" id="contract-contact-email" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">เบอร์โทรศัพท์</label>
+              <input type="tel" id="contract-contact-tel" class="form-control">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">ไฟล์สัญญา (PDF)</label>
+            <input type="file" id="contract-pdf-input" class="form-control" accept="application/pdf">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-itgc-primary">บันทึกสัญญา</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+let contractModalObj = null;
+
+async function init_Form_3_1() {
+  contractModalObj = new bootstrap.Modal(document.getElementById('contractModal'));
+  await loadContractList();
+}
+
+async function loadContractList() {
+  const tbody = document.getElementById('contract-table-body');
+  try {
+    const contracts = await apiFetch('get_contracts');
+    if (!contracts || contracts.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center p-4 text-muted">ไม่พบข้อมูลสัญญา</td></tr>';
+      return;
+    }
+
+    let html = '';
+    contracts.forEach(c => {
+      html += `
+        <tr>
+          <td><strong>${c.Contract_No}</strong></td>
+          <td>${c.Vendor_Name}</td>
+          <td>${c.Subject}</td>
+          <td><span class="badge bg-info text-dark">${c.Contract_Type}</span></td>
+          <td>${c.Start_Date || '-'} ถึง ${c.End_Date || '-'}</td>
+          <td>${c.Budget || '-'}</td>
+          <td>${c.name_contract || '-'} (${c.TEL_contract || '-'})</td>
+          <td>
+            ${c.PDF_Upload_Link ? `<a href="${c.PDF_Upload_Link}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-pdf"></i> เปิด PDF</a>` : '-'}
+          </td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-outline-warning me-1" onclick="editContract('${c.Contract_ID}')"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteContractAction('${c.Contract_ID}')"><i class="bi bi-trash"></i></button>
+          </td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function openContractModal() {
+  document.getElementById('contract-form').reset();
+  document.getElementById('contract-id-input').value = '';
+  document.getElementById('contractModalTitle').innerText = 'เพิ่มรายการสัญญาใหม่';
+  contractModalObj.show();
+}
+
+async function editContract(id) {
+  try {
+    const contracts = await apiFetch('get_contracts');
+    const c = contracts.find(item => item.Contract_ID === id);
+    if (!c) return;
+
+    document.getElementById('contract-id-input').value = c.Contract_ID;
+    document.getElementById('contract-vendor').value = c.Vendor_Name || '';
+    document.getElementById('contract-no').value = c.Contract_No || '';
+    document.getElementById('contract-subject').value = c.Subject || '';
+    document.getElementById('contract-start-date').value = c.Start_Date || '';
+    document.getElementById('contract-end-date').value = c.End_Date || '';
+    document.getElementById('contract-type').value = c.Contract_Type || 'รายปี';
+    document.getElementById('contract-budget').value = c.Budget || '';
+    document.getElementById('contract-contact-name').value = c.name_contract || '';
+    document.getElementById('contract-contact-email').value = c.email_contract || '';
+    document.getElementById('contract-contact-tel').value = c.TEL_contract || '';
+
+    document.getElementById('contractModalTitle').innerText = 'แก้ไขรายการสัญญา';
+    contractModalObj.show();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function handleContractSubmit(e) {
+  e.preventDefault();
+
+  const id = document.getElementById('contract-id-input').value;
+  const pdfInput = document.getElementById('contract-pdf-input');
+  let base64Pdf = null;
+
+  if (pdfInput.files && pdfInput.files.length > 0) {
+    base64Pdf = await fileToBase64(pdfInput.files[0]);
+  }
+
+  const payload = {
+    Contract_ID: id,
+    Vendor_Name: document.getElementById('contract-vendor').value.trim(),
+    Contract_No: document.getElementById('contract-no').value.trim(),
+    Subject: document.getElementById('contract-subject').value.trim(),
+    Start_Date: document.getElementById('contract-start-date').value,
+    End_Date: document.getElementById('contract-end-date').value,
+    Contract_Type: document.getElementById('contract-type').value,
+    Budget: document.getElementById('contract-budget').value.trim(),
+    name_contract: document.getElementById('contract-contact-name').value.trim(),
+    email_contract: document.getElementById('contract-contact-email').value.trim(),
+    TEL_contract: document.getElementById('contract-contact-tel').value.trim(),
+    PDFData: base64Pdf
+  };
+
+  try {
+    const action = id ? 'update_contract' : 'add_contract';
+    const res = await apiFetch(action, payload);
+    contractModalObj.hide();
+    Swal.fire('สำเร็จ!', res.message, 'success');
+    loadContractList();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function deleteContractAction(id) {
+  const result = await Swal.fire({
+    title: 'ยืนยันการลบสัญญา?',
+    text: 'การลบจะเป็นการทำ Soft Delete (Is_Active = False) ตามกฎ Audit',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#DC2626',
+    confirmButtonText: 'ลบสัญญา'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const res = await apiFetch('delete_contract', { contractId: id });
+      Swal.fire('ลบเรียบร้อย', res.message, 'success');
+      loadContractList();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
+</script>

@@ -1,0 +1,254 @@
+<!-- Form 1.1: UAR (User Access Request) -->
+<div class="itgc-card">
+  <div class="itgc-card-header">
+    <h1 class="itgc-card-title">
+      <i class="bi bi-person-plus-fill"></i>
+      Form 1.1: UAR (User Access Request)
+    </h1>
+    <span class="badge bg-secondary">เจ้าหน้าที่ IT บันทึกข้อมูล</span>
+  </div>
+
+  <form id="form-1-1" onsubmit="handleForm1_1Submit(event)">
+    
+    <!-- Top Row: Date & Req Type -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="form-label">วันที่ทำรายการ</label>
+        <input type="text" id="uar-req-date" class="form-control" readonly>
+      </div>
+      <div class="col-md-8">
+        <label class="form-label">ประเภทรายการ <span class="text-danger">*</span></label>
+        <div class="pt-2">
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="Req_Type" id="req-type-new" value="ผู้ใช้ใหม่" checked onchange="toggleReqTypeFields()">
+            <label class="form-check-label fw-medium" for="req-type-new">ผู้ใช้ใหม่</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="Req_Type" id="req-type-resign" value="ลาออก" onchange="toggleReqTypeFields()">
+            <label class="form-check-label fw-medium" for="req-type-resign">ลาออก</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="Req_Type" id="req-type-edit" value="แก้ไขสิทธิ์" onchange="toggleReqTypeFields()">
+            <label class="form-check-label fw-medium" for="req-type-edit">แก้ไขสิทธิ์</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Employee Search & Details (Form 1.1 Spec Adjustment: Auto-fetch latest record by Emp_Code) -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="form-label">รหัสพนักงาน <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <input type="text" id="uar-emp-code" class="form-control" placeholder="ระบุรหัสพนักงาน" required onblur="searchEmployeeLatestRecord()">
+          <button class="btn btn-outline-secondary" type="button" onclick="searchEmployeeLatestRecord()">
+            <i class="bi bi-search"></i> ค้นหา
+          </button>
+        </div>
+        <div class="form-text text-primary">กรอกรหัสพนักงานแล้วระบบจะค้นหาข้อมูลล่าสุดให้อัตโนมัติ</div>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">ชื่อ-นามสกุล (ภาษาไทย) <span class="text-danger">*</span></label>
+        <input type="text" id="uar-fullname-th" class="form-control" required placeholder="นาย/นาง/นางสาว...">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">ชื่อ-นามสกุล (English)</label>
+        <input type="text" id="uar-fullname-en" class="form-control" placeholder="Mr./Mrs./Ms....">
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="form-label">หน่วยงาน / แผนก</label>
+        <input type="text" id="uar-department" class="form-control" placeholder="เช่น IT, HR, Account">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">O365 Email</label>
+        <input type="email" id="uar-email" class="form-control" placeholder="user@company.com">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">COMPUTER NAME</label>
+        <select id="uar-computer-name" class="form-select">
+          <option value="">-- เลือกเครื่องคอมพิวเตอร์ --</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Handover Date/Time Fields (Conditional: ผู้ใช้ใหม่ / ลาออก) -->
+    <div id="handover-fields-container" class="p-3 mb-3 bg-light rounded border">
+      <h6 class="fw-bold text-primary mb-2"><i class="bi bi-clock-history"></i> กำหนดวันและเวลาส่งมอบ / ลาออก</h6>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">วันที่ส่งมอบ/ลาออก <span class="text-danger">*</span></label>
+          <input type="date" id="uar-handover-date" class="form-control">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">เวลาที่ส่งมอบ/ลาออก <span class="text-danger">*</span></label>
+          <input type="time" id="uar-handover-time" class="form-control">
+        </div>
+      </div>
+    </div>
+
+    <!-- Role Checkboxes -->
+    <div class="mb-3">
+      <label class="form-label">สิทธิ์การเข้าถึงระบบที่ต้องการ (Role) <span class="text-danger">*</span></label>
+      <div class="d-flex flex-wrap gap-3 p-3 bg-light rounded border">
+        <div class="form-check"><input class="form-check-input role-cb" type="checkbox" value="MGMT" id="role-mgmt"><label class="form-check-label" for="role-mgmt">MGMT</label></div>
+        <div class="form-check"><input class="form-check-input role-cb" type="checkbox" value="SALES" id="role-sales"><label class="form-check-label" for="role-sales">SALES</label></div>
+        <div class="form-check"><input class="form-check-input role-cb" type="checkbox" value="PLAN" id="role-plan"><label class="form-check-label" for="role-plan">PLAN</label></div>
+        <div class="form-check"><input class="form-check-input role-cb" type="checkbox" value="DESIGN" id="role-design"><label class="form-check-label" for="role-design">DESIGN</label></div>
+        <div class="form-check"><input class="form-check-input role-cb" type="checkbox" value="CONSTRUCTION" id="role-const"><label class="form-check-label" for="role-const">CONSTRUCTION</label></div>
+        <div class="form-check"><input class="form-check-input role-cb" type="checkbox" value="PURCHASE" id="role-purch"><label class="form-check-label" for="role-purch">PURCHASE</label></div>
+        <div class="form-check"><input class="form-check-input role-cb" type="checkbox" value="STORE" id="role-store"><label class="form-check-label" for="role-store">STORE</label></div>
+        <div class="form-check"><input class="form-check-input role-cb" type="checkbox" value="ACC" id="role-acc"><label class="form-check-label" for="role-acc">ACC</label></div>
+        <div class="form-check"><input class="form-check-input role-cb" type="checkbox" value="FN" id="role-fn"><label class="form-check-label" for="role-fn">FN</label></div>
+        <div class="form-check"><input class="form-check-input role-cb" type="checkbox" value="HR" id="role-hr"><label class="form-check-label" for="role-hr">HR</label></div>
+      </div>
+    </div>
+
+    <!-- VPN Selection -->
+    <div class="mb-4">
+      <label class="form-label">สิทธิ์ VPN Access</label>
+      <div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="VPN_Access" id="vpn-no" value="No" checked>
+          <label class="form-check-label" for="vpn-no">No (ไม่ใช้งาน)</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="VPN_Access" id="vpn-yes" value="Yes">
+          <label class="form-check-label" for="vpn-yes">Yes (อนุญาตใช้งาน)</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="d-flex justify-content-end gap-2">
+      <button type="reset" class="btn btn-light">ล้างข้อมูล</button>
+      <button type="submit" class="btn btn-itgc-primary">
+        <i class="bi bi-save"></i> บันทึก UAR Request & สร้าง Deep Link
+      </button>
+    </div>
+
+  </form>
+</div>
+
+<script>
+async function init_Form_1_1() {
+  document.getElementById('uar-req-date').value = formatDateTimeThai(new Date());
+  
+  // Load Computer Assets Dropdown
+  try {
+    const master = await apiFetch('get_master_data');
+    const compSelect = document.getElementById('uar-computer-name');
+    compSelect.innerHTML = '<option value="">-- เลือกเครื่องคอมพิวเตอร์ --</option>';
+    master.assets.forEach(a => {
+      compSelect.innerHTML += `<option value="${a.Computer_Name}">${a.Computer_Name} (${a.Asset_Type || 'N/A'})</option>`;
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  toggleReqTypeFields();
+}
+
+function toggleReqTypeFields() {
+  const reqType = document.querySelector('input[name="Req_Type"]:checked').value;
+  const handoverContainer = document.getElementById('handover-fields-container');
+  if (reqType === 'แก้ไขสิทธิ์') {
+    handoverContainer.style.display = 'none';
+  } else {
+    handoverContainer.style.display = 'block';
+  }
+}
+
+async function searchEmployeeLatestRecord() {
+  const empCode = document.getElementById('uar-emp-code').value.trim();
+  if (!empCode) return;
+
+  try {
+    const res = await apiFetch('get_latest_employee', { empCode: empCode });
+    if (res.found && res.data) {
+      document.getElementById('uar-fullname-th').value = res.data.FullName || '';
+      document.getElementById('uar-fullname-en').value = res.data.FullNameEN || '';
+      document.getElementById('uar-department').value = res.data.Department || '';
+      if (res.data.O365_Email) document.getElementById('uar-email').value = res.data.O365_Email;
+      if (res.data.Computer_Name) document.getElementById('uar-computer-name').value = res.data.Computer_Name;
+
+      // Fill roles if available
+      if (res.data.Role_Requested) {
+        const roles = res.data.Role_Requested.split(',').map(r => r.trim());
+        document.querySelectorAll('.role-cb').forEach(cb => {
+          cb.checked = roles.includes(cb.value);
+        });
+      }
+      
+      showAlert('พบข้อมูลพนักงาน', `ดึงข้อมูลล่าสุดของพนักงานรหัส ${empCode} เรียบร้อยแล้ว`, 'success');
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function handleForm1_1Submit(e) {
+  e.preventDefault();
+  
+  const reqType = document.querySelector('input[name="Req_Type"]:checked').value;
+  const empCode = document.getElementById('uar-emp-code').value.trim();
+  const fullName = document.getElementById('uar-fullname-th').value.trim();
+
+  // Selected Roles
+  const roles = [];
+  document.querySelectorAll('.role-cb:checked').forEach(cb => roles.push(cb.value));
+
+  if (roles.length === 0) {
+    showAlert('ข้อมูลไม่ครบถ้วน', 'กรุณาเลือกสิทธิ์การเข้าถึงอย่างน้อย 1 บทบาท (Role)', 'warning');
+    return;
+  }
+
+  let handoverDateTime = formatDateTimeThai(new Date());
+  if (reqType !== 'แก้ไขสิทธิ์') {
+    const dateVal = document.getElementById('uar-handover-date').value;
+    const timeVal = document.getElementById('uar-handover-time').value;
+    if (dateVal && timeVal) {
+      handoverDateTime = `${formatDateThai(dateVal)} ${timeVal}:00`;
+    }
+  }
+
+  const payload = {
+    Req_Type: reqType,
+    Req_Date: handoverDateTime,
+    Emp_Code: empCode,
+    FullName: fullName,
+    FullNameEN: document.getElementById('uar-fullname-en').value.trim(),
+    Department: document.getElementById('uar-department').value.trim(),
+    Role_Requested: roles,
+    O365_Email: document.getElementById('uar-email').value.trim(),
+    Computer_Name: document.getElementById('uar-computer-name').value,
+    VPN_Access: document.getElementById('vpn-yes').checked
+  };
+
+  try {
+    const res = await apiFetch('submit_uar', payload);
+    const deepLinkUrl = `${window.location.origin}${window.location.pathname}?action=approve&form=1_2&req_id=${res.reqId}`;
+
+    Swal.fire({
+      title: 'บันทึกสำเร็จ!',
+      html: `
+        <p>บันทึก UAR Request เรียบร้อยแล้ว (Req_ID: <strong>${res.reqId}</strong>)</p>
+        <p class="text-start mb-1 fw-bold">กรุณา Copy Deep Link นี้ส่งให้ผู้ขอ เพื่อกดยอมรับเงื่อนไข:</p>
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" id="deep-link-copy-input" value="${deepLinkUrl}" readonly>
+          <button class="btn btn-outline-primary" onclick="navigator.clipboard.writeText('${deepLinkUrl}'); alert('คัดลอก ลิงก์เรียบร้อย!');">Copy</button>
+        </div>
+      `,
+      icon: 'success',
+      confirmButtonText: 'ตกลง'
+    });
+
+    document.getElementById('form-1-1').reset();
+    init_Form_1_1();
+  } catch (err) {
+    console.error(err);
+  }
+}
+</script>

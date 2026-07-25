@@ -1,0 +1,52 @@
+กรุณาออกแบบโครงสร้างไฟล์ของโปรเจกต์ Google Apps Script (GAS) + HTML นี้ 
+ตามหลักการแยกส่วนงาน (Separation of Concerns) แบบเดียวกับการเขียนภาษา C ที่แยก
+.h/.c ออกเป็นไฟล์ย่อยแล้วค่อย include เข้ามารวมกัน โดยมีกฎเหล็กดังนี้ ห้ามรวมทุกฟอร์ม
+ไว้ในไฟล์เดียวเด็ดขาด:
+
+0 : UI/UX ขอโทนสีสว่าง ขาว น้ำเงินเข้ม ดู classis ทันสมัย ไม่ปวดตา วันที่ต่างที่ ที่ใช้เป็นค่า default ใช้ thai region UTC +7.00 ด้วย เป็น ปี ค.ค. dd/MM/yyyy  
+
+1.Code.gs
+    -ทำหน้าที่เป็น Router (API Endpoint) รับ Request (doGet, doPost) จากฝั่ง GitHub แล้วส่งต่อไปยัง Function ของแต่ละโมดูล ห้ามใส่ Business Logic ของฟอร์มใดฟอร์มหนึ่งลงในไฟล์นี้โดยตรง
+      สำคัญ: การ Return ผลลัพธ์กลับไปยัง Frontend ต้องทำผ่าน ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON) เท่านั้น ห้ามใช้ HtmlService เด็ดขาด
+
+
+2. config.gs
+   - รวมค่าคงที่ทั้งหมดของทั้งโปรเจกต์ไว้ที่เดียว เช่น Spreadsheet ID, Sheet Name
+     ของทุกตาราง, Google Doc Template ID ของทุก Form, Google Drive Folder ID,
+     ชื่อ Column ที่ใช้ซ้ำบ่อย ๆ
+   - ทุกไฟล์อื่นห้าม Hardcode ค่าคงที่ซ้ำเอง ต้องเรียกจากตัวแปรใน config.gs นี้จุดเดียว
+     เพื่อให้แก้ไขค่าตรงไหนก็แก้ที่เดียวจบ ไม่ต้องไล่หาในหลายไฟล์
+
+3. Utils.gs (หรือ Common.gs)
+   - รวม Function ที่ใช้ร่วมกันหลายโมดูล เช่น การอ่าน/เขียน Sheet, การ Generate PDF
+     จาก Template, การเขียน Log ลง 99_System_Log, การจัดการ Lock (LockService),
+     การ Format Response เป็น JSON, การตรวจสอบสิทธิ์ (Auth Check)
+   - ฟังก์ชันเหล่านี้ต้องถูกออกแบบให้ Reusable รับ Parameter เพื่อให้ทุกโมดูลเรียกใช้ร่วมกันได้
+     โดยไม่ต้องเขียนโค้ดซ้ำ
+
+4. แยกไฟล์ตามระบบงาน (Module) ห้ามรวมกัน แต่ละไฟล์ให้มีเฉพาะ Business Logic
+   ของโมดูลนั้น ๆ เท่านั้น ตั้งชื่อและแบ่งตามนี้:
+   - Mod_AccessControl.gs      → UAR, UAR Approve, Access Review
+   - Mod_ITAsset.gs            → Asset Movement, Asset Destroy
+   - Mod_Outsource.gs          → Contract Management
+   - Mod_ChangeMgmt.gs         → Change Request, UAT Sign-off, Deploy Sign-off
+   - Mod_Backup.gs             → Backup Log, Recovery Test
+   - Mod_DRP.gs                → DRP Test, Approve DRP Test
+   - Mod_PhysicalSecurity.gs   → Server Room Access, Approve Server Room
+   - Mod_Notify.gs             → Notify Message Board
+
+5. ฝั่ง Frontend (HTML/CSS/JS) จะถูกนำไป Host บน GitHub (Static Web Server) แยกจาก GAS อย่างเด็ดขาด
+   - index.html ทำหน้าที่เป็นหน้า Shell หลัก (Layout, Menu, LIFF Init)
+   - แต่ละฟอร์มให้แยกไฟล์ HTML โครงสร้างฟอร์มเปล่าๆ ไว้ในโฟลเดอร์ /views/ เช่น Form_1_1.html, Form_1_2.html
+   - การแสดงผล ให้ใช้ JavaScript โหลดเนื้อหาไฟล์จาก /views/ มาแทรกใน Container ของ index.html (ทำเป็น Single Page Application - SPA) แทนการเปลี่ยนหน้าเว็บ
+
+   - การรับส่งข้อมูลกับ Database ให้ JavaScript (Fetch API) ยิง HTTP Request ไปที่ URL ของ GAS Web App และรอรับผลลัพธ์เป็น JSON
+   - CSS/JS ที่ใช้ร่วมกันทุกหน้า ให้แยกไว้ใน /assets/css/style.css และ /assets/js/clientUtils.js
+
+เป้าหมายของการแยกแบบนี้คือ เวลาต้องแก้ไข/เพิ่มฟีเจอร์ของฟอร์มใดฟอร์มหนึ่ง จะแก้ไขเฉพาะ
+ไฟล์ของฟอร์มนั้น โดยไม่กระทบโค้ดของฟอร์มอื่นที่ทำงานปกติอยู่แล้ว
+
+ก่อนเริ่มเขียนโค้ดจริง ให้แสดงโครงสร้าง File Tree ที่วางแผนไว้ทั้งหมดให้ผมดูและ
+ยืนยันก่อน 1 รอบ ยังไม่ต้องเขียนโค้ดจนกว่าผมจะ Confirm โครงสร้างนี้
+
+หมาายเหตุ : มีการปรับ function spec Form1.1 แต่ยังไม่ได้ ปรับ flowchart ให้ยึดตัวแก้ไขที่ form1.1 เป็นสำคัญ เพราะต้องการให้ ใส่รหัส พนักงานแล้ว ไปค้นหา recoerd ล่าสุดของ พนักงาน รหัสนี้ มาแสดง ที่น่าจะเพื่อลดการ key ใหม่

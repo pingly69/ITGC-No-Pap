@@ -1,0 +1,92 @@
+<!-- Form 7.1: Server Room Access (Request) - Public Access -->
+<div class="itgc-card">
+  <div class="itgc-card-header">
+    <h1 class="itgc-card-title text-navy">
+      <i class="bi bi-door-open-fill"></i>
+      Form 7.1: Server Room Access Request (แบบขอเข้าพื้นที่ห้อง Server Room)
+    </h1>
+    <span class="badge bg-success">Public Access Form</span>
+  </div>
+
+  <form id="form-7-1" onsubmit="handleForm7_1Submit(event)">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label">วันที่และเวลาที่ต้องการเข้าพื้นที่ <span class="text-danger">*</span></label>
+        <input type="text" id="sr-req-date" class="form-control" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">ชื่อ-นามสกุล ผู้ขอเข้าพื้นที่ (Visitor/Outsource) <span class="text-danger">*</span></label>
+        <input type="text" id="sr-visitor-name" class="form-control" required placeholder="ระบุชื่อผู้เข้าพื้นที่...">
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">วัตถุประสงค์ในการเข้าพื้นที่หวงห้าม <span class="text-danger">*</span></label>
+      <textarea id="sr-purpose" class="form-control" rows="3" required placeholder="ระบุเหตุผล เช่น ติดตั้งอุปกรณ์ Server, ตรวจเช็คระบบแอร์, Maintenance..."></textarea>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">เลือก Profile ผู้อนุมัติเข้าพื้นที่ <span class="text-danger">*</span></label>
+      <select id="sr-approve-profile" class="form-select" required>
+        <option value="">-- เลือก Profile ผู้อนุมัติ --</option>
+      </select>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2">
+      <button type="submit" class="btn btn-itgc-primary">
+        <i class="bi bi-send"></i> ส่งคำขอเข้าพื้นที่ & สร้าง Link อนุมัติ
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+async function init_Form_7_1() {
+  document.getElementById('sr-req-date').value = formatDateTimeThai(new Date());
+
+  try {
+    const master = await apiFetch('get_master_data');
+    const profSelect = document.getElementById('sr-approve-profile');
+    profSelect.innerHTML = '<option value="">-- เลือก Profile ผู้อนุมัติ --</option>';
+    master.approveProfiles.forEach(p => {
+      profSelect.innerHTML += `<option value="${p.Profile_Name}">${p.Profile_Name} (${p.FullName} - ${p.Department})</option>`;
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function handleForm7_1Submit(e) {
+  e.preventDefault();
+
+  const payload = {
+    Req_Date: document.getElementById('sr-req-date').value,
+    Visitor_Name: document.getElementById('sr-visitor-name').value.trim(),
+    Purpose: document.getElementById('sr-purpose').value.trim(),
+    Approve_Profile: document.getElementById('sr-approve-profile').value
+  };
+
+  try {
+    const res = await apiFetch('submit_server_room_req', payload);
+    const deepLinkUrl = `${window.location.origin}${window.location.pathname}?action=approve&form=7_2&req_id=${res.logId}`;
+
+    Swal.fire({
+      title: 'ส่งคำขอสำเร็จ!',
+      html: `
+        <p>${res.message} (Log_ID: <strong>${res.logId}</strong>)</p>
+        <p class="text-start mb-1 fw-bold">กรุณา Copy Deep Link นี้ส่งให้ผู้อนุมัติ (${payload.Approve_Profile}) เพื่อกดอนุมัติ:</p>
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" value="${deepLinkUrl}" readonly onclick="this.select()">
+          <button class="btn btn-outline-primary" onclick="navigator.clipboard.writeText('${deepLinkUrl}'); alert('คัดลอก ลิงก์เรียบร้อย!');">Copy</button>
+        </div>
+      `,
+      icon: 'success'
+    });
+
+    document.getElementById('form-7-1').reset();
+    init_Form_7_1();
+  } catch (err) {
+    console.error(err);
+  }
+}
+</script>

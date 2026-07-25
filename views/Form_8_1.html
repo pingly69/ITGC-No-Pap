@@ -1,0 +1,97 @@
+<!-- Form 8.1: Message Notify Board & Clear -->
+<div class="itgc-card">
+  <div class="itgc-card-header">
+    <h1 class="itgc-card-title">
+      <i class="bi bi-bell-fill text-warning"></i>
+      Form 8.1: Notify Message Board Management
+    </h1>
+    <button class="btn btn-outline-danger" onclick="clearAllNotificationsAction()">
+      <i class="bi bi-trash3-fill"></i> ล้างข้อความทั้งหมด
+    </button>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-custom align-middle" id="notify-table">
+      <thead>
+        <tr>
+          <th>LOG ID</th>
+          <th>วันที่และเวลา</th>
+          <th>ข้อความแจ้งเตือน (Notification Message)</th>
+          <th class="text-center">จัดการ</th>
+        </tr>
+      </thead>
+      <tbody id="notify-table-body">
+        <tr>
+          <td colspan="4" class="text-center p-4">กำลังโหลดข้อความแจ้งเตือน...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function init_Form_8_1() {
+  await loadNotificationsList();
+}
+
+async function loadNotificationsList() {
+  const tbody = document.getElementById('notify-table-body');
+  try {
+    const notifs = await apiFetch('get_notifications');
+    if (!notifs || notifs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-muted">ไม่มีข้อความแจ้งเตือนคงค้าง</td></tr>';
+      return;
+    }
+
+    let html = '';
+    notifs.forEach(n => {
+      html += `
+        <tr>
+          <td><small><strong>${n.LOG_ID}</strong></small></td>
+          <td><small>${n.Last_update || '-'}</small></td>
+          <td><i class="bi bi-info-circle text-primary me-2"></i> ${n.message}</td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteNotificationAction('${n.LOG_ID}')">
+              <i class="bi bi-trash"></i> ลบ
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function deleteNotificationAction(logId) {
+  try {
+    const res = await apiFetch('delete_notification', { logId: logId });
+    showAlert('สำเร็จ', res.message, 'success');
+    loadNotificationsList();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function clearAllNotificationsAction() {
+  const result = await Swal.fire({
+    title: 'ยืนยันล้างข้อความทั้งหมด?',
+    text: 'ข้อความแจ้งเตือนทั้งหมดจะถูกลบออกจากระบบ 04-Notify_message',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#DC2626',
+    confirmButtonText: 'ล้างทั้งหมด'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const res = await apiFetch('clear_all_notifications');
+      Swal.fire('สำเร็จ', res.message, 'success');
+      loadNotificationsList();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
+</script>

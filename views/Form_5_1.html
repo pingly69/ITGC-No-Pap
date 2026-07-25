@@ -1,0 +1,80 @@
+<!-- Form 5.1: Backup Log -->
+<div class="itgc-card">
+  <div class="itgc-card-header">
+    <h1 class="itgc-card-title">
+      <i class="bi bi-hdd-network-fill"></i>
+      Form 5.1: Backup Log (บันทึกผลการสำรองข้อมูลประจำวัน)
+    </h1>
+    <span class="badge bg-secondary">IT Operations Log</span>
+  </div>
+
+  <form id="form-5-1" onsubmit="handleForm5_1Submit(event)">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label">วันที่ทำการสำรองข้อมูล <span class="text-danger">*</span></label>
+        <input type="date" id="bk-date" class="form-control" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">ประเภทระบบงาน (Job Type) <span class="text-danger">*</span></label>
+        <select id="bk-job-type" class="form-select" required>
+          <option value="NAS Backup">NAS Backup</option>
+          <option value="Cloud Sync">Cloud Sync</option>
+          <option value="Mango GL Backup">Mango GL Backup</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <label class="form-label">สถานะการสำรองข้อมูล <span class="text-danger">*</span></label>
+        <div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="BkStatus" id="bk-pass" value="ผ่าน" checked>
+            <label class="form-check-label text-success fw-bold" for="bk-pass"><i class="bi bi-check-circle"></i> ผ่าน (Success)</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="BkStatus" id="bk-fail" value="ไม่ผ่าน">
+            <label class="form-check-label text-danger fw-bold" for="bk-fail"><i class="bi bi-x-circle"></i> ไม่ผ่าน (Failed)</label>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">หมายเหตุ / Error Log</label>
+        <textarea id="bk-remark" class="form-control" rows="2" placeholder="ระบุขนาดไฟล์ หรือสาเหตุกรณีไม่ผ่าน..."></textarea>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2">
+      <button type="submit" class="btn btn-itgc-primary">
+        <i class="bi bi-save"></i> บันทึก Backup Log
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+function init_Form_5_1() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('bk-date').value = today;
+}
+
+async function handleForm5_1Submit(e) {
+  e.preventDefault();
+
+  const payload = {
+    Backup_Date: document.getElementById('bk-date').value,
+    Job_Type: document.getElementById('bk-job-type').value,
+    Status: document.querySelector('input[name="BkStatus"]:checked').value,
+    Remark: document.getElementById('bk-remark').value.trim()
+  };
+
+  try {
+    const res = await apiFetch('submit_backup_log', payload);
+    Swal.fire('บันทึกเรียบร้อย!', res.message, 'success');
+    document.getElementById('form-5-1').reset();
+    init_Form_5_1();
+  } catch (err) {
+    console.error(err);
+  }
+}
+</script>

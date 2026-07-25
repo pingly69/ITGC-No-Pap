@@ -1,0 +1,160 @@
+<!-- Form 1.2: UAR Approve (Deep Link Screen) -->
+<div class="itgc-card">
+  <div class="itgc-card-header bg-navy text-white">
+    <h1 class="itgc-card-title text-primary">
+      <i class="bi bi-shield-check"></i>
+      Form 1.2: แบบยืนยันยอมรับสิทธิ์การใช้งานและทรัพย์สิน (UAR Approve)
+    </h1>
+    <span class="badge bg-warning text-dark">สำหรับผู้ขอสิทธิ์กดยืนยัน</span>
+  </div>
+
+  <div id="uar-approve-content">
+    <div class="text-center p-4">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2">กำลังดึงข้อมูลคำขอสิทธิ์...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentReqId = null;
+
+async function init_Form_1_2(params) {
+  currentReqId = params.reqId;
+  if (!currentReqId) {
+    document.getElementById('uar-approve-content').innerHTML = `
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill"></i> ไม่พบ Req_ID ใน URL Parameters
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    const record = await apiFetch('get_uar_deeplink', { req_id: currentReqId });
+    renderUARDetails(record);
+  } catch (err) {
+    document.getElementById('uar-approve-content').innerHTML = `
+      <div class="alert alert-danger p-4 text-center">
+        <h4><i class="bi bi-x-circle-fill"></i> ไม่สามารถเข้าถึงรายการนี้ได้</h4>
+        <p class="mb-0">${err.message}</p>
+      </div>
+    `;
+  }
+}
+
+function renderUARDetails(req) {
+  const container = document.getElementById('uar-approve-content');
+  const isPending = req.Req_Status === 'Pending';
+
+  let statusBadge = `<span class="badge bg-warning text-dark">รอการตอบรับ (Pending)</span>`;
+  if (req.Req_Status === 'Approved') statusBadge = `<span class="badge bg-success">ยอมรับสิทธิ์แล้ว (Approved)</span>`;
+  if (req.Req_Status === 'Rejected') statusBadge = `<span class="badge bg-danger">ปฏิเสธสิทธิ์ (Rejected)</span>`;
+
+  let actionFormHtml = '';
+
+  if (isPending) {
+    actionFormHtml = `
+      <div class="p-3 mb-4 bg-light rounded border border-primary">
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="agree-terms-cb">
+          <label class="form-check-label fw-bold text-dark" for="agree-terms-cb">
+            ข้าพเจ้ายอมรับเงื่อนไขการถือครองสิทธิ์การใช้งานและอุปกรณ์ และรับผิดชอบต่อสิทธิ์ในการเข้าถึงข้อมูลขององค์กรตามนโยบายความปลอดภัยสารสนเทศ (ITGC)
+          </label>
+        </div>
+        <div class="d-flex justify-content-end gap-3">
+          <button class="btn btn-itgc-danger" onclick="submitUARAction('Reject')">
+            <i class="bi bi-x-circle"></i> ปฏิเสธ (Reject)
+          </button>
+          <button class="btn btn-itgc-success" onclick="submitUARAction('Approve')">
+            <i class="bi bi-check-circle-fill"></i> ยอมรับสิทธิ์ (Approve)
+          </button>
+        </div>
+      </div>
+    `;
+  } else {
+    actionFormHtml = `
+      <div class="alert alert-secondary text-center p-3">
+        <h5 class="mb-1"><i class="bi bi-info-circle-fill"></i> รายการนี้ได้รับการดำเนินการไปแล้ว</h5>
+        <p class="mb-0">สถานะปัจจุบัน: ${statusBadge}</p>
+        ${req.PDF_Link ? `<a href="${req.PDF_Link}" target="_blank" class="btn btn-sm btn-outline-primary mt-2"><i class="bi bi-file-pdf"></i> ดาวน์โหลดเอกสารหลักฐาน PDF</a>` : ''}
+      </div>
+    `;
+  }
+
+  container.innerHTML = `
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+      <span class="fs-6 text-muted">เลขที่คำขอ: <strong>${req.Req_ID}</strong></span>
+      <span>สถานะ: ${statusBadge}</span>
+    </div>
+
+    <div class="table-responsive mb-4">
+      <table class="table table-bordered align-middle">
+        <tbody>
+          <tr>
+            <th class="bg-light w-25">ประเภทรายการ</th>
+            <td><span class="fw-bold text-primary">${req.Req_Type}</span></td>
+            <th class="bg-light w-25">วันที่ทำรายการ</th>
+            <td>${req.Req_Date}</td>
+          </tr>
+          <tr>
+            <th class="bg-light">รหัสพนักงาน</th>
+            <td>${req.Emp_Code}</td>
+            <th class="bg-light">ชื่อ-นามสกุล</th>
+            <td>${req.FullName} ${req.FullNameEN ? `(${req.FullNameEN})` : ''}</td>
+          </tr>
+          <tr>
+            <th class="bg-light">หน่วยงาน/แผนก</th>
+            <td>${req.Department || 'N/A'}</td>
+            <th class="bg-light">O365 Email</th>
+            <td>${req.O365_Email || 'N/A'}</td>
+          </tr>
+          <tr>
+            <th class="bg-light">COMPUTER NAME</th>
+            <td>${req.Computer_Name || 'N/A'}</td>
+            <th class="bg-light">VPN Access</th>
+            <td>${req.VPN_Access}</td>
+          </tr>
+          <tr>
+            <th class="bg-light">สิทธิ์ที่ขอ (Roles)</th>
+            <td colspan="3"><span class="badge bg-primary fs-6">${req.Role_Requested}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    ${actionFormHtml}
+  `;
+}
+
+async function submitUARAction(actionType) {
+  if (actionType === 'Approve') {
+    const agreeCb = document.getElementById('agree-terms-cb');
+    if (!agreeCb || !agreeCb.checked) {
+      showAlert('ยังไม่ได้ยอมรับเงื่อนไข', 'กรุณากดติ๊กยอมรับเงื่อนไขก่อนกดปุ่ม Approve', 'warning');
+      return;
+    }
+  }
+
+  try {
+    const res = await apiFetch('submit_uar_approve', {
+      Req_ID: currentReqId,
+      Action: actionType,
+      Agree_Terms: actionType === 'Approve'
+    });
+
+    Swal.fire({
+      title: actionType === 'Approve' ? 'อนุมัติเรียบร้อย!' : 'ปฏิเสธเรียบร้อย',
+      html: `
+        <p>${res.message}</p>
+        ${res.pdfUrl ? `<a href="${res.pdfUrl}" target="_blank" class="btn btn-primary"><i class="bi bi-file-pdf"></i> เปิดดูเอกสาร PDF หลักฐาน</a>` : ''}
+      `,
+      icon: 'success'
+    }).then(() => {
+      init_Form_1_2({ reqId: currentReqId });
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+</script>

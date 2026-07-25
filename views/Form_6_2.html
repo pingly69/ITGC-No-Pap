@@ -1,0 +1,137 @@
+<!-- Form 6.2: Approve DRP Test (Deep Link Screen) -->
+<div class="itgc-card">
+  <div class="itgc-card-header bg-navy text-white">
+    <h1 class="itgc-card-title text-primary">
+      <i class="bi bi-shield-check"></i>
+      Form 6.2: แบบอนุมัติ/รับทราบผลการซ้อมแผนฉุกเฉิน DRP (Approve DRP Test)
+    </h1>
+    <span class="badge bg-warning text-dark">สำหรับผู้บริหารกดรับทราบ</span>
+  </div>
+
+  <div id="drp-approve-content">
+    <div class="text-center p-4">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2">กำลังดึงข้อมูล DRP Test Log...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentDRPId = null;
+
+async function init_Form_6_2(params) {
+  currentDRPId = params.reqId;
+  if (!currentDRPId) {
+    document.getElementById('drp-approve-content').innerHTML = `
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill"></i> ไม่พบ DRP_ID ใน URL Parameters
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    const record = await apiFetch('get_drp_deeplink', { req_id: currentDRPId });
+    renderDRPApproveDetails(record);
+  } catch (err) {
+    document.getElementById('drp-approve-content').innerHTML = `
+      <div class="alert alert-danger p-4 text-center">
+        <h4><i class="bi bi-x-circle-fill"></i> ไม่สามารถเข้าถึงรายการนี้ได้</h4>
+        <p class="mb-0">${err.message}</p>
+      </div>
+    `;
+  }
+}
+
+function renderDRPApproveDetails(drp) {
+  const container = document.getElementById('drp-approve-content');
+  const isPending = drp.Status === 'Pending';
+
+  let statusBadge = `<span class="badge bg-warning text-dark">รอการกดรับทราบ</span>`;
+  if (drp.Status === 'Approved') statusBadge = `<span class="badge bg-success">รับทราบผลเรียบร้อยแล้ว</span>`;
+
+  let actionHtml = '';
+  if (isPending) {
+    actionHtml = `
+      <div class="p-3 mb-4 bg-light rounded border border-primary text-end">
+        <button class="btn btn-itgc-success btn-lg" onclick="submitDRPApproveAction()">
+          <i class="bi bi-check-circle-fill"></i> Approve (รับทราบผลการทดสอบ DRP)
+        </button>
+      </div>
+    `;
+  } else {
+    actionHtml = `
+      <div class="alert alert-secondary text-center p-3">
+        <h5 class="mb-1"><i class="bi bi-info-circle-fill"></i> รายการนี้ได้รับการกดรับทราบเรียบร้อยแล้ว</h5>
+        <p class="mb-0">สถานะ: ${statusBadge}</p>
+        ${drp.PDF_Link ? `<a href="${drp.PDF_Link}" target="_blank" class="btn btn-sm btn-outline-primary mt-2"><i class="bi bi-file-pdf"></i> ดาวน์โหลด PDF เอกสารหลักฐาน</a>` : ''}
+      </div>
+    `;
+  }
+
+  container.innerHTML = `
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+      <span class="fs-6 text-muted">DRP ID: <strong>${drp.DRP_ID}</strong></span>
+      <span>สถานะ: ${statusBadge}</span>
+    </div>
+
+    <div class="table-responsive mb-4">
+      <table class="table table-bordered align-middle">
+        <tbody>
+          <tr>
+            <th class="bg-light w-25">วันที่ทดสอบ DRP</th>
+            <td>${drp.Test_Date}</td>
+            <th class="bg-light w-25">ผลการทดสอบ</th>
+            <td><span class="badge ${drp.Result === 'ผ่าน' ? 'bg-success' : 'bg-danger'} fs-6">${drp.Result}</span></td>
+          </tr>
+          <tr>
+            <th class="bg-light">หัวข้อการทดสอบ (Subject)</th>
+            <td colspan="3"><strong class="text-navy fs-6">${drp.Subject}</strong></td>
+          </tr>
+          <tr>
+            <th class="bg-light">รายละเอียด (Detail)</th>
+            <td colspan="3">${drp.Detail}</td>
+          </tr>
+          <tr>
+            <th class="bg-light">Profile ผู้อนุมัติที่ระบุ</th>
+            <td>${drp.Approve_Profile}</td>
+            <th class="bg-light">ไฟล์แนบหลักฐาน</th>
+            <td>${drp.Upload_Link ? `<a href="${drp.Upload_Link}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-pdf"></i> ดูไฟล์แนบ</a>` : 'ไม่มีไฟล์แนบ'}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    ${actionHtml}
+  `;
+}
+
+async function submitDRPApproveAction() {
+  const result = await Swal.fire({
+    title: 'ยืนยันการรับทราบผล DRP Test?',
+    text: 'ท่านกำลังยืนยันรับทราบรายงานผลการทดสอบซ้อมแผนฉุกเฉิน DRP',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#059669',
+    confirmButtonText: 'ยืนยัน Approve (รับทราบ)'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const res = await apiFetch('submit_approve_drp', { DRP_ID: currentDRPId });
+      Swal.fire({
+        title: 'รับทราบเรียบร้อย!',
+        html: `
+          <p>${res.message}</p>
+          ${res.pdfUrl ? `<a href="${res.pdfUrl}" target="_blank" class="btn btn-primary mt-2"><i class="bi bi-file-pdf"></i> ดาวน์โหลด PDF เอกสารหลักฐาน</a>` : ''}
+        `,
+        icon: 'success'
+      }).then(() => {
+        init_Form_6_2({ reqId: currentDRPId });
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+}
+</script>

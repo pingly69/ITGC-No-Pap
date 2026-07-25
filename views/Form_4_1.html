@@ -1,0 +1,263 @@
+<!-- Form 4.1: Change Request & IT Update -->
+<div class="itgc-card">
+  <div class="itgc-card-header">
+    <h1 class="itgc-card-title">
+      <i class="bi bi-tools"></i>
+      Form 4.1: Change Request & IT Progress Update
+    </h1>
+    <button class="btn btn-itgc-primary" onclick="openNewTicketModal()">
+      <i class="bi bi-plus-circle"></i> เปิด Ticket แจ้งปัญหา/ขอเปลี่ยนระบบ
+    </button>
+  </div>
+
+  <!-- Change Request Tickets List Table -->
+  <div class="table-responsive">
+    <table class="table table-custom align-middle" id="change-req-table">
+      <thead>
+        <tr>
+          <th>Req ID</th>
+          <th>ประเภท</th>
+          <th>เรื่อง (Subject)</th>
+          <th>ความสำคัญ</th>
+          <th>ผู้แจ้ง</th>
+          <th>วันที่แจ้ง</th>
+          <th>สถานะ</th>
+          <th>IT Vendor / แผนงาน</th>
+          <th class="text-center">IT Action</th>
+        </tr>
+      </thead>
+      <tbody id="change-req-table-body">
+        <tr>
+          <td colspan="9" class="text-center p-4">กำลังโหลดข้อมูล Change Request...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal: Open New Ticket -->
+<div class="modal fade" id="newTicketModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-navy text-white">
+        <h5 class="modal-title">เปิด Ticket ขอเปลี่ยนระบบ / แจ้งปัญหาการใช้งาน</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="new-ticket-form" onsubmit="handleNewTicketSubmit(event)">
+        <div class="modal-body">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">ประเภทรายการ <span class="text-danger">*</span></label>
+              <select id="chg-req-type" class="form-select" required>
+                <option value="1.แจ้งปัญหาการใช้งาน">1. แจ้งปัญหาการใช้งาน (Incident)</option>
+                <option value="2.ขอเปลี่ยนระบบการทำงาน">2. ขอเปลี่ยนระบบการทำงาน (Change Request)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">ระดับความสำคัญ <span class="text-danger">*</span></label>
+              <select id="chg-priority" class="form-select" required>
+                <option value="Low">Low (ต่ำ)</option>
+                <option value="Medium" selected>Medium (ปานกลาง)</option>
+                <option value="High">High (สูง)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">เรื่อง (Subject) <span class="text-danger">*</span></label>
+            <input type="text" id="chg-subject" class="form-control" required placeholder="ระบุหัวข้อเรื่อง...">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">รายละเอียด <span class="text-danger">*</span></label>
+            <textarea id="chg-detail" class="form-control" rows="3" required placeholder="ระบุรายละเอียดปัญหาหรือสิ่งที่ต้องการเปลี่ยนแปลง..."></textarea>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">ชื่อผู้แจ้ง <span class="text-danger">*</span></label>
+              <input type="text" id="chg-req-name" class="form-control" required placeholder="ชื่อ-นามสกุล ผู้แจ้ง">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">รหัสพนักงานผู้แจ้ง (EMP_CODE) <span class="text-danger">*</span></label>
+              <input type="text" id="chg-emp-code" class="form-control" required placeholder="สำคัญ - ใช้ทำ UAT Sign-off">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-itgc-primary">เปิด Ticket</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: IT Update Progress -->
+<div class="modal fade" id="itUpdateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-navy text-white">
+        <h5 class="modal-title">IT อัปเดตสถานะและแผนงาน</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="it-update-form" onsubmit="handleITUpdateSubmit(event)">
+        <input type="hidden" id="it-update-req-id">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">ผู้ดำเนินการ / IT Vendor</label>
+            <input type="text" id="it-vendor" class="form-control" placeholder="เช่น ทีม In-house IT หรือ Vendor Name">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">แผนการดำเนินงาน (IT Plan)</label>
+            <textarea id="it-plan" class="form-control" rows="3" placeholder="ระบุรายละเอียดแนวทางแก้ไข/แผนงาน..."></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">ปรับสถานะ Ticket <span class="text-danger">*</span></label>
+            <select id="it-status" class="form-select" required>
+              <option value="New">New</option>
+              <option value="Process">Process (กำลังดำเนินการ)</option>
+              <option value="UAT">UAT (เสร็จแล้ว ส่งให้ User Sign-off)</option>
+              <option value="Cancel">Cancel (ยกเลิก)</option>
+            </select>
+            <div class="form-text text-primary">เมื่อปรับเป็น <strong>UAT</strong> ระบบจะสร้าง Deep Link Form 4.3 สำหรับส่งให้ผู้แจ้งทำ Sign-off</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-itgc-primary">บันทึกการอัปเดต</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+let newTicketModalObj = null;
+let itUpdateModalObj = null;
+
+async function init_Form_4_1() {
+  newTicketModalObj = new bootstrap.Modal(document.getElementById('newTicketModal'));
+  itUpdateModalObj = new bootstrap.Modal(document.getElementById('itUpdateModal'));
+  await loadChangeRequestList();
+}
+
+async function loadChangeRequestList() {
+  const tbody = document.getElementById('change-req-table-body');
+  try {
+    const reqs = await apiFetch('get_change_requests');
+    if (!reqs || reqs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center p-4 text-muted">ไม่พบรายการ Change Request</td></tr>';
+      return;
+    }
+
+    let html = '';
+    reqs.forEach(r => {
+      let badgeClass = 'bg-secondary';
+      if (r.Status === 'New') badgeClass = 'bg-primary';
+      if (r.Status === 'Process') badgeClass = 'bg-info text-dark';
+      if (r.Status === 'UAT') badgeClass = 'bg-warning text-dark';
+      if (r.Status === 'UAT-Approved') badgeClass = 'bg-success';
+      if (r.Status === 'Deployed') badgeClass = 'bg-dark';
+
+      const deepLinkUrl = `${window.location.origin}${window.location.pathname}?action=approve&form=4_3&req_id=${r.Req_ID}`;
+
+      html += `
+        <tr>
+          <td><strong>${r.Req_ID}</strong></td>
+          <td><small>${r.Req_Type}</small></td>
+          <td>${r.Subject}</td>
+          <td><span class="badge ${r.Priority === 'High' ? 'bg-danger' : 'bg-secondary'}">${r.Priority}</span></td>
+          <td>${r.Req_Name} (${r.EMP_CODE})</td>
+          <td><small>${r.Req_Date || '-'}</small></td>
+          <td><span class="badge ${badgeClass}">${r.Status}</span></td>
+          <td><small>${r.IT_Vendor || '-'}: ${r.IT_Plan || '-'}</small></td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="openITUpdateModal('${r.Req_ID}', '${r.IT_Vendor || ''}', '${r.IT_Plan || ''}', '${r.Status}')">
+              <i class="bi bi-pencil-square"></i> IT Update
+            </button>
+            ${r.Status === 'UAT' ? `<button class="btn btn-sm btn-outline-success" onclick="navigator.clipboard.writeText('${deepLinkUrl}'); alert('คัดลอก UAT Deep Link เรียบร้อย!');"><i class="bi bi-link-45deg"></i> Copy UAT Link</button>` : ''}
+          </td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function openNewTicketModal() {
+  document.getElementById('new-ticket-form').reset();
+  newTicketModalObj.show();
+}
+
+function openITUpdateModal(reqId, vendor, plan, status) {
+  document.getElementById('it-update-req-id').value = reqId;
+  document.getElementById('it-vendor').value = vendor;
+  document.getElementById('it-plan').value = plan;
+  document.getElementById('it-status').value = status;
+  itUpdateModalObj.show();
+}
+
+async function handleNewTicketSubmit(e) {
+  e.preventDefault();
+
+  const payload = {
+    Req_Type: document.getElementById('chg-req-type').value,
+    Priority: document.getElementById('chg-priority').value,
+    Subject: document.getElementById('chg-subject').value.trim(),
+    Detail: document.getElementById('chg-detail').value.trim(),
+    Req_Name: document.getElementById('chg-req-name').value.trim(),
+    EMP_CODE: document.getElementById('chg-emp-code').value.trim()
+  };
+
+  try {
+    const res = await apiFetch('submit_change_request', payload);
+    newTicketModalObj.hide();
+    Swal.fire('เปิด Ticket สำเร็จ!', res.message, 'success');
+    loadChangeRequestList();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function handleITUpdateSubmit(e) {
+  e.preventDefault();
+
+  const reqId = document.getElementById('it-update-req-id').value;
+  const status = document.getElementById('it-status').value;
+
+  const payload = {
+    Req_ID: reqId,
+    IT_Vendor: document.getElementById('it-vendor').value.trim(),
+    IT_Plan: document.getElementById('it-plan').value.trim(),
+    Status: status
+  };
+
+  try {
+    const res = await apiFetch('update_it_progress', payload);
+    itUpdateModalObj.hide();
+
+    if (status === 'UAT') {
+      const deepLinkUrl = `${window.location.origin}${window.location.pathname}?action=approve&form=4_3&req_id=${reqId}`;
+      Swal.fire({
+        title: 'ปรับสถานะเป็น UAT เรียบร้อย!',
+        html: `
+          <p>กรุณา Copy Deep Link นี้ส่งให้ผู้แจ้งทำ UAT Sign-off:</p>
+          <input type="text" class="form-control" value="${deepLinkUrl}" readonly onclick="this.select()">
+        `,
+        icon: 'success'
+      });
+    } else {
+      Swal.fire('อัปเดตสำเร็จ', res.message, 'success');
+    }
+
+    loadChangeRequestList();
+  } catch (err) {
+    console.error(err);
+  }
+}
+</script>

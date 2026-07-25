@@ -1,0 +1,131 @@
+<!-- Form 7.2: Approve Server Room (Deep Link Screen) -->
+<div class="itgc-card">
+  <div class="itgc-card-header bg-navy text-white">
+    <h1 class="itgc-card-title text-primary">
+      <i class="bi bi-door-open-fill"></i>
+      Form 7.2: แบบอนุมัติการเข้าพื้นที่ห้อง Server Room (Approve Server Room Access)
+    </h1>
+    <span class="badge bg-warning text-dark">สำหรับผู้อนุมัติกดอนุมัติการเข้าพื้นที่</span>
+  </div>
+
+  <div id="sr-approve-content">
+    <div class="text-center p-4">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2">กำลังดึงข้อมูลคำขอเข้าห้อง Server Room...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentSRLogId = null;
+
+async function init_Form_7_2(params) {
+  currentSRLogId = params.reqId;
+  if (!currentSRLogId) {
+    document.getElementById('sr-approve-content').innerHTML = `
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill"></i> ไม่พบ Log_ID ใน URL Parameters
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    const record = await apiFetch('get_server_room_deeplink', { req_id: currentSRLogId });
+    renderSRApproveDetails(record);
+  } catch (err) {
+    document.getElementById('sr-approve-content').innerHTML = `
+      <div class="alert alert-danger p-4 text-center">
+        <h4><i class="bi bi-x-circle-fill"></i> ไม่สามารถเข้าถึงรายการนี้ได้</h4>
+        <p class="mb-0">${err.message}</p>
+      </div>
+    `;
+  }
+}
+
+function renderSRApproveDetails(sr) {
+  const container = document.getElementById('sr-approve-content');
+  const isPending = sr.Status === 'Pending';
+
+  let statusBadge = `<span class="badge bg-warning text-dark">รอการกดอนุมัติ</span>`;
+  if (sr.Status === 'Approved') statusBadge = `<span class="badge bg-success">อนุมัติการเข้าพื้นที่เรียบร้อยแล้ว</span>`;
+
+  let actionHtml = '';
+  if (isPending) {
+    actionHtml = `
+      <div class="p-3 mb-4 bg-light rounded border border-primary text-end">
+        <button class="btn btn-itgc-success btn-lg" onclick="submitSRApproveAction()">
+          <i class="bi bi-check-circle-fill"></i> Approve (อนุมัติการเข้าพื้นที่ห้อง Server Room)
+        </button>
+      </div>
+    `;
+  } else {
+    actionHtml = `
+      <div class="alert alert-secondary text-center p-3">
+        <h5 class="mb-1"><i class="bi bi-info-circle-fill"></i> รายการนี้ได้รับการกดอนุมัติเรียบร้อยแล้ว</h5>
+        <p class="mb-0">สถานะ: ${statusBadge}</p>
+        ${sr.PDF_Link ? `<a href="${sr.PDF_Link}" target="_blank" class="btn btn-sm btn-outline-primary mt-2"><i class="bi bi-file-pdf"></i> ดาวน์โหลด PDF เอกสารหลักฐาน</a>` : ''}
+      </div>
+    `;
+  }
+
+  container.innerHTML = `
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+      <span class="fs-6 text-muted">Log ID: <strong>${sr.Log_ID}</strong></span>
+      <span>สถานะ: ${statusBadge}</span>
+    </div>
+
+    <div class="table-responsive mb-4">
+      <table class="table table-bordered align-middle">
+        <tbody>
+          <tr>
+            <th class="bg-light w-25">วันที่และเวลาขอเข้าพื้นที่</th>
+            <td>${sr.Req_Date}</td>
+            <th class="bg-light w-25">ชื่อผู้เข้าพื้นที่</th>
+            <td><strong class="text-navy fs-6">${sr.Visitor_Name}</strong></td>
+          </tr>
+          <tr>
+            <th class="bg-light">วัตถุประสงค์ (Purpose)</th>
+            <td colspan="3">${sr.Purpose}</td>
+          </tr>
+          <tr>
+            <th class="bg-light">Profile ผู้อนุมัติที่ระบุ</th>
+            <td colspan="3">${sr.Approve_Profile}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    ${actionHtml}
+  `;
+}
+
+async function submitSRApproveAction() {
+  const result = await Swal.fire({
+    title: 'ยืนยันอนุมัติการเข้าพื้นที่?',
+    text: 'ท่านกำลังยืนยันอนุมัติให้ผู้เข้าพื้นที่เข้าห้อง Server Room ตามวัตถุประสงค์ที่แจ้งไว้',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#059669',
+    confirmButtonText: 'ยืนยัน Approve (อนุมัติ)'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const res = await apiFetch('submit_approve_server_room', { Log_ID: currentSRLogId });
+      Swal.fire({
+        title: 'อนุมัติเรียบร้อย!',
+        html: `
+          <p>${res.message}</p>
+          ${res.pdfUrl ? `<a href="${res.pdfUrl}" target="_blank" class="btn btn-primary mt-2"><i class="bi bi-file-pdf"></i> ดาวน์โหลด PDF เอกสารหลักฐาน</a>` : ''}
+        `,
+        icon: 'success'
+      }).then(() => {
+        init_Form_7_2({ reqId: currentSRLogId });
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+}
+</script>

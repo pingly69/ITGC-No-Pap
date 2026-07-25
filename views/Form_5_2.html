@@ -1,0 +1,85 @@
+<!-- Form 5.2: Recovery Test Log -->
+<div class="itgc-card">
+  <div class="itgc-card-header">
+    <h1 class="itgc-card-title">
+      <i class="bi bi-arrow-clockwise text-primary"></i>
+      Form 5.2: Recovery Test Log (บันทึกผลการทดสอบเรียกคืนข้อมูล)
+    </h1>
+    <span class="badge bg-secondary">IT Operations & Audit Log</span>
+  </div>
+
+  <form id="form-5-2" onsubmit="handleForm5_2Submit(event)">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label">วันที่ทดสอบ Recovery <span class="text-danger">*</span></label>
+        <input type="date" id="rec-test-date" class="form-control" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">นำชุดข้อมูลของวันที่ใดมาทดสอบ (From Backup Date) <span class="text-danger">*</span></label>
+        <input type="date" id="rec-from-date" class="form-control" required>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <label class="form-label">ผลการทดสอบ <span class="text-danger">*</span></label>
+        <div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="RecStatus" id="rec-pass" value="ผ่าน" checked>
+            <label class="form-check-label text-success fw-bold" for="rec-pass"><i class="bi bi-check-circle"></i> ผ่าน (สามารถ Restore & Verify ได้สมบูรณ์)</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="RecStatus" id="rec-fail" value="ไม่ผ่าน">
+            <label class="form-check-label text-danger fw-bold" for="rec-fail"><i class="bi bi-x-circle"></i> ไม่ผ่าน</label>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">รายละเอียดขั้นตอนการทดสอบ (Detail) <span class="text-danger">*</span></label>
+        <textarea id="rec-detail" class="form-control" rows="3" required placeholder="ระบุวิธี Restore, เวลาที่ใช้ และผลการ Verify ข้อมูล..."></textarea>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2">
+      <button type="submit" class="btn btn-itgc-primary">
+        <i class="bi bi-save"></i> บันทึก Recovery Test & สร้าง PDF
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+function init_Form_5_2() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('rec-test-date').value = today;
+  document.getElementById('rec-from-date').value = today;
+}
+
+async function handleForm5_2Submit(e) {
+  e.preventDefault();
+
+  const payload = {
+    Test_Date: document.getElementById('rec-test-date').value,
+    From_Bk_Date: document.getElementById('rec-from-date').value,
+    Status: document.querySelector('input[name="RecStatus"]:checked').value,
+    Detail: document.getElementById('rec-detail').value.trim()
+  };
+
+  try {
+    const res = await apiFetch('submit_recovery_test', payload);
+    Swal.fire({
+      title: 'บันทึกสำเร็จ!',
+      html: `
+        <p>${res.message} (Test_ID: <strong>${res.testId}</strong>)</p>
+        ${res.pdfUrl ? `<a href="${res.pdfUrl}" target="_blank" class="btn btn-primary mt-2"><i class="bi bi-file-pdf"></i> เปิดดูเอกสาร PDF หลักฐาน</a>` : ''}
+      `,
+      icon: 'success'
+    });
+
+    document.getElementById('form-5-2').reset();
+    init_Form_5_2();
+  } catch (err) {
+    console.error(err);
+  }
+}
+</script>

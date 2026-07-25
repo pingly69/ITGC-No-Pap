@@ -1,0 +1,123 @@
+<!-- Form 2.1: Asset Movement (บันทึกโอนย้ายทรัพย์สิน) -->
+<div class="itgc-card">
+  <div class="itgc-card-header">
+    <h1 class="itgc-card-title">
+      <i class="bi bi-box-arrow-right"></i>
+      Form 2.1: Asset Movement (บันทึกโอนย้ายทรัพย์สิน)
+    </h1>
+    <span class="badge bg-secondary">IT Staff Record</span>
+  </div>
+
+  <form id="form-2-1" onsubmit="handleForm2_1Submit(event)">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label">ประเภทเอกสาร <span class="text-danger">*</span></label>
+        <div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="Doc_Type" id="move-type-receive" value="2-รับมอบ" checked>
+            <label class="form-check-label fw-bold text-success" for="move-type-receive">2-รับมอบอุปกรณ์</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="Doc_Type" id="move-type-return" value="1-ส่งคืน">
+            <label class="form-check-label fw-bold text-danger" for="move-type-return">1-ส่งคืนอุปกรณ์</label>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">วันที่และเวลาโอนย้าย</label>
+        <input type="text" id="move-datetime" class="form-control" readonly>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label">COMPUTER NAME <span class="text-danger">*</span></label>
+        <select id="move-computer-name" class="form-select" required onchange="fetchComputerOwner()">
+          <option value="">-- เลือกเครื่องคอมพิวเตอร์ --</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">รหัสพนักงาน <span class="text-danger">*</span></label>
+        <input type="text" id="move-emp-code" class="form-control" required placeholder="ระบุรหัสพนักงานผู้โอนย้าย">
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label">ชื่อ-นามสกุล <span class="text-danger">*</span></label>
+        <input type="text" id="move-fullname" class="form-control" required placeholder="ระบุชื่อ-นามสกุล">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">เบอร์โทรศัพท์ติดต่อ</label>
+        <input type="tel" id="move-tel" class="form-control" placeholder="08x-xxx-xxxx">
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">หมายเหตุการโอนย้าย</label>
+      <textarea id="move-remark" class="form-control" rows="2" placeholder="ระบุเหตุผลการส่งคืน/รับมอบ..."></textarea>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2">
+      <button type="submit" class="btn btn-itgc-primary">
+        <i class="bi bi-save"></i> บันทึก Asset Movement
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+async function init_Form_2_1() {
+  document.getElementById('move-datetime').value = formatDateTimeThai(new Date());
+
+  try {
+    const master = await apiFetch('get_master_data');
+    const compSelect = document.getElementById('move-computer-name');
+    compSelect.innerHTML = '<option value="">-- เลือกเครื่องคอมพิวเตอร์ --</option>';
+    master.assets.forEach(a => {
+      compSelect.innerHTML += `<option value="${a.Computer_Name}">${a.Computer_Name}</option>`;
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function fetchComputerOwner() {
+  const compName = document.getElementById('move-computer-name').value;
+  if (!compName) return;
+
+  try {
+    const res = await apiFetch('get_latest_owner_computer', { computerName: compName });
+    if (res.found && res.data) {
+      document.getElementById('move-emp-code').value = res.data.Emp_Code || '';
+      document.getElementById('move-fullname').value = res.data.FullName || '';
+      document.getElementById('move-tel').value = res.data.Tel || '';
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function handleForm2_1Submit(e) {
+  e.preventDefault();
+
+  const payload = {
+    Doc_Type: document.querySelector('input[name="Doc_Type"]:checked').value,
+    Computer_Name: document.getElementById('move-computer-name').value,
+    Emp_Code: document.getElementById('move-emp-code').value.trim(),
+    FullName: document.getElementById('move-fullname').value.trim(),
+    Tel: document.getElementById('move-tel').value.trim(),
+    Move_DateTime: document.getElementById('move-datetime').value,
+    Remark: document.getElementById('move-remark').value.trim()
+  };
+
+  try {
+    const res = await apiFetch('submit_asset_movement', payload);
+    Swal.fire('บันทึกเรียบร้อย!', res.message, 'success');
+    document.getElementById('form-2-1').reset();
+    init_Form_2_1();
+  } catch (err) {
+    console.error(err);
+  }
+}
+</script>

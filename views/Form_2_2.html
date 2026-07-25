@@ -1,0 +1,74 @@
+<!-- Form 2.2: Asset Destroy (ขอทำลายสื่อบันทึกข้อมูล) -->
+<div class="itgc-card">
+  <div class="itgc-card-header">
+    <h1 class="itgc-card-title text-danger">
+      <i class="bi bi-trash-fill"></i>
+      Form 2.2: Asset Destroy (ขอทำลายสื่อบันทึกข้อมูล)
+    </h1>
+    <span class="badge bg-secondary">IT Staff Record</span>
+  </div>
+
+  <form id="form-2-2" onsubmit="handleForm2_2Submit(event)">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label">วันที่และเวลาทำลาย</label>
+        <input type="text" id="destroy-date" class="form-control" readonly>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">ภาพประกอบการทำลาย (แนบรูปภาพ) <span class="text-danger">*</span></label>
+        <input type="file" id="destroy-image-input" class="form-control" accept="image/*" required>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">หมายเหตุ / วิธีการทำลาย <span class="text-danger">*</span></label>
+      <textarea id="destroy-remark" class="form-control" rows="3" required placeholder="ระบุชนิดอุปกรณ์ Serial Number และวิธีการทำลาย (เช่น เจาะทำลาย HDD)..."></textarea>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2">
+      <button type="submit" class="btn btn-itgc-danger">
+        <i class="bi bi-trash"></i> บันทึกประวัติการทำลายสื่อบันทึกข้อมูล
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+function init_Form_2_2() {
+  document.getElementById('destroy-date').value = formatDateTimeThai(new Date());
+}
+
+async function handleForm2_2Submit(e) {
+  e.preventDefault();
+
+  const fileInput = document.getElementById('destroy-image-input');
+  if (!fileInput.files || fileInput.files.length === 0) {
+    showAlert('ข้อมูลไม่ครบถ้วน', 'กรุณาแนบภาพถ่ายการทำลายสื่อบันทึกข้อมูล', 'warning');
+    return;
+  }
+
+  try {
+    const base64Image = await fileToBase64(fileInput.files[0]);
+
+    const payload = {
+      Remark: document.getElementById('destroy-remark').value.trim(),
+      ImageData: base64Image
+    };
+
+    const res = await apiFetch('submit_asset_destroy', payload);
+    Swal.fire({
+      title: 'บันทึกสำเร็จ!',
+      html: `
+        <p>${res.message}</p>
+        ${res.uploadUrl ? `<a href="${res.uploadUrl}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-image"></i> ดูรูปภาพที่อัปโหลด</a>` : ''}
+      `,
+      icon: 'success'
+    });
+
+    document.getElementById('form-2-2').reset();
+    init_Form_2_2();
+  } catch (err) {
+    console.error(err);
+  }
+}
+</script>

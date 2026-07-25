@@ -1,0 +1,142 @@
+<!-- Form 4.3: UAT Sign-off (Deep Link Screen) -->
+<div class="itgc-card">
+  <div class="itgc-card-header bg-navy text-white">
+    <h1 class="itgc-card-title text-primary">
+      <i class="bi bi-check-circle-fill"></i>
+      Form 4.3: UAT Sign-off (ยืนยันผลการทดสอบการใช้งาน)
+    </h1>
+    <span class="badge bg-warning text-dark">สำหรับผู้แจ้งเรื่องกดยืนยัน UAT</span>
+  </div>
+
+  <div id="uat-signoff-content">
+    <div class="text-center p-4">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2">กำลังดึงข้อมูล Change Request...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentUATReqId = null;
+
+async function init_Form_4_3(params) {
+  currentUATReqId = params.reqId;
+  if (!currentUATReqId) {
+    document.getElementById('uat-signoff-content').innerHTML = `
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill"></i> ไม่พบ Req_ID ใน URL Parameters
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    const record = await apiFetch('get_uat_deeplink', { req_id: currentUATReqId });
+    renderUATSignOffDetails(record);
+  } catch (err) {
+    document.getElementById('uat-signoff-content').innerHTML = `
+      <div class="alert alert-danger p-4 text-center">
+        <h4><i class="bi bi-x-circle-fill"></i> ไม่สามารถเข้าถึงรายการนี้ได้</h4>
+        <p class="mb-0">${err.message}</p>
+      </div>
+    `;
+  }
+}
+
+function renderUATSignOffDetails(req) {
+  const container = document.getElementById('uat-signoff-content');
+  const isUAT = req.Status === 'UAT';
+
+  let statusBadge = `<span class="badge bg-warning text-dark">รอ UAT Sign-off</span>`;
+  if (req.Status === 'UAT-Approved') statusBadge = `<span class="badge bg-success">UAT Approved แล้ว</span>`;
+  if (req.Status === 'Deployed') statusBadge = `<span class="badge bg-dark">Deployed ขึ้นระบบจริงแล้ว</span>`;
+
+  let actionHtml = '';
+
+  if (isUAT) {
+    actionHtml = `
+      <div class="p-3 mb-4 bg-light rounded border border-success">
+        <p class="fw-bold mb-3 text-dark">
+          <i class="bi bi-info-circle"></i> หากท่านได้ทำการทดสอบการแก้ไข/ระบบเรียบร้อยแล้ว และผลการทดสอบถูกต้องตรงตามต้องการ กรุณากดปุ่ม "ยอมรับผล (UAT Approve)" ด้านล่างนี้
+        </p>
+        <div class="d-flex justify-content-end">
+          <button class="btn btn-itgc-success btn-lg" onclick="submitUATSignOffAction()">
+            <i class="bi bi-check-lg"></i> ยอมรับผล (UAT Approve)
+          </button>
+        </div>
+      </div>
+    `;
+  } else {
+    actionHtml = `
+      <div class="alert alert-secondary text-center p-3">
+        <h5 class="mb-1"><i class="bi bi-info-circle-fill"></i> รายการนี้ได้ผ่านขั้นตอน UAT ไปเรียบร้อยแล้ว</h5>
+        <p class="mb-0">สถานะปัจจุบัน: ${statusBadge}</p>
+      </div>
+    `;
+  }
+
+  container.innerHTML = `
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+      <span class="fs-6 text-muted">Ticket ID: <strong>${req.Req_ID}</strong></span>
+      <span>สถานะ: ${statusBadge}</span>
+    </div>
+
+    <div class="table-responsive mb-4">
+      <table class="table table-bordered align-middle">
+        <tbody>
+          <tr>
+            <th class="bg-light w-25">ประเภทรายการ</th>
+            <td>${req.Req_Type}</td>
+            <th class="bg-light w-25">วันที่แจ้งเรื่อง</th>
+            <td>${req.Req_Date || '-'}</td>
+          </tr>
+          <tr>
+            <th class="bg-light">เรื่อง (Subject)</th>
+            <td colspan="3"><strong class="text-navy fs-6">${req.Subject}</strong></td>
+          </tr>
+          <tr>
+            <th class="bg-light">รายละเอียด</th>
+            <td colspan="3">${req.Detail}</td>
+          </tr>
+          <tr>
+            <th class="bg-light">ชื่อผู้แจ้ง (EMP_CODE)</th>
+            <td>${req.Req_Name} (${req.EMP_CODE})</td>
+            <th class="bg-light">ความสำคัญ</th>
+            <td><span class="badge ${req.Priority === 'High' ? 'bg-danger' : 'bg-secondary'}">${req.Priority}</span></td>
+          </tr>
+          <tr>
+            <th class="bg-light">IT Vendor / ผู้ดำเนินการ</th>
+            <td>${req.IT_Vendor || 'In-house IT'}</td>
+            <th class="bg-light">แผนงาน IT ที่ดำเนินการ</th>
+            <td>${req.IT_Plan || '-'}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    ${actionHtml}
+  `;
+}
+
+async function submitUATSignOffAction() {
+  const result = await Swal.fire({
+    title: 'ยืนยัน UAT Sign-off?',
+    text: 'ท่านได้ทำการทดสอบระบบและยอมรับผลการทำงานเรียบร้อยแล้ว',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#059669',
+    confirmButtonText: 'ยืนยัน UAT Approve'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const res = await apiFetch('submit_uat_signoff', { Req_ID: currentUATReqId });
+      Swal.fire('สำเร็จ!', res.message, 'success').then(() => {
+        init_Form_4_3({ reqId: currentUATReqId });
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+}
+</script>
