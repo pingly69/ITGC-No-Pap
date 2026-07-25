@@ -117,10 +117,9 @@ const Mod_AccessControl = {
 
     const reqEmpCode = String(req.Emp_Code || '').trim().toLowerCase();
     const userEmpCode = String(currentUser.Emp_Code || '').trim().toLowerCase();
-    const isITAdmin = String(currentUser.Scr_01 || '').trim().toLowerCase() === 'yes' || String(currentUser.Scr_01 || '').trim().toLowerCase() === 'true';
 
-    // อนุญาตหาก Emp_Code ตรงกัน OR เป็น IT Admin (มีสิทธิ์ Scr_01) เพื่อให้ IT สามารถทดสอบและดำเนินการแทนได้ทั้งจาก PC และ LINE
-    if (userEmpCode !== reqEmpCode && !isITAdmin) {
+    // เข้มงวดตาม Spec: ต้องเป็นเจ้าของรายการ (Emp_Code ตรงกัน) เท่านั้น
+    if (userEmpCode !== reqEmpCode) {
       throw new Error(`คุณไม่มีสิทธิ์เข้าถึงรายการนี้ (Emp_Code ของคุณในระบบคือ '${currentUser.Emp_Code}' ไม่ตรงกับเจ้าของรายการคือ '${req.Emp_Code}')`);
     }
 

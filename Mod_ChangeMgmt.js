@@ -103,9 +103,9 @@ const Mod_ChangeMgmt = {
 
     const reqEmpCode = String(req.EMP_CODE || '').trim().toLowerCase();
     const userEmpCode = String(currentUser.Emp_Code || '').trim().toLowerCase();
-    const isITAdmin = String(currentUser.Scr_07 || '').trim().toLowerCase() === 'yes' || String(currentUser.Scr_07 || '').trim().toLowerCase() === 'true';
 
-    if (userEmpCode !== reqEmpCode && !isITAdmin) {
+    // เข้มงวดตาม Spec: ต้องเป็นผู้เปิด Ticket (EMP_CODE ตรงกัน) เท่านั้น
+    if (userEmpCode !== reqEmpCode) {
       throw new Error(`คุณไม่มีสิทธิ์เข้าถึงรายการนี้ (EMP_CODE ของคุณในระบบคือ '${currentUser.Emp_Code}' ไม่ตรงกับผู้เปิด Ticket คือ '${req.EMP_CODE}')`);
     }
 
