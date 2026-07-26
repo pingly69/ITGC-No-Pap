@@ -62,6 +62,31 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Pagination Controls Footer -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between p-2 bg-light rounded border border-top-0 mx-0 mb-3" id="pagination-toolbar">
+    <div class="text-muted small">
+      แสดง <span id="pag-start">0</span> - <span id="pag-end">0</span> จากทั้งหมด <span id="pag-total" class="fw-bold">0</span> รายการ
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <div class="d-flex align-items-center me-2">
+        <small class="text-muted me-1">แสดงหน้าละ:</small>
+        <select id="pag-size-select" class="form-select form-select-sm" style="width: auto;" onchange="changePageSize(this.value)">
+          <option value="20" selected>20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="all">ทั้งหมด</option>
+        </select>
+      </div>
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item" id="pag-btn-first"><button class="page-link" onclick="goToPage(1)">&laquo;&laquo;</button></li>
+        <li class="page-item" id="pag-btn-prev"><button class="page-link" onclick="goToPage(currentPage - 1)">&laquo;</button></li>
+        <li class="page-item disabled"><span class="page-link text-dark fw-bold" id="pag-info">หน้า 1 / 1</span></li>
+        <li class="page-item" id="pag-btn-next"><button class="page-link" onclick="goToPage(currentPage + 1)">&raquo;</button></li>
+        <li class="page-item" id="pag-btn-last"><button class="page-link" onclick="goToPage(totalPages)">&raquo;&raquo;</button></li>
+      </ul>
+    </div>
+  </div>
 </div>
 
 <!-- Modal: Open New Ticket -->
@@ -168,6 +193,10 @@ let newTicketModalObj = null;
 let itUpdateModalObj = null;
 
 let allChangeRequestsCache = [];
+let filteredRequestsCache = [];
+let currentPage = 1;
+let pageSize = 20;
+let totalPages = 1;
 
 async function init_Form_4_1() {
   newTicketModalObj = new bootstrap.Modal(document.getElementById('newTicketModal'));
@@ -192,7 +221,7 @@ function filterChangeRequests() {
   const keyword = (document.getElementById('chg-search-keyword')?.value || '').toLowerCase().trim();
   const selectedStatus = document.getElementById('chg-filter-status')?.value || '';
 
-  const filtered = allChangeRequestsCache.filter(r => {
+  filteredRequestsCache = allChangeRequestsCache.filter(r => {
     // กรองด้วยสถานะ
     if (selectedStatus && r.Status !== selectedStatus) return false;
 
@@ -212,13 +241,66 @@ function filterChangeRequests() {
     return true;
   });
 
-  renderTableRows(filtered);
+  currentPage = 1; // Reset ไปหน้าแรกเมื่อมีการเปลี่ยนเงื่อนไขค้นหา
+  renderPaginatedTable();
 }
 
 function resetFilters() {
   if (document.getElementById('chg-search-keyword')) document.getElementById('chg-search-keyword').value = '';
   if (document.getElementById('chg-filter-status')) document.getElementById('chg-filter-status').value = '';
-  renderTableRows(allChangeRequestsCache);
+  filteredRequestsCache = allChangeRequestsCache.slice();
+  currentPage = 1;
+  renderPaginatedTable();
+}
+
+function changePageSize(val) {
+  pageSize = val === 'all' ? filteredRequestsCache.length : parseInt(val, 10);
+  currentPage = 1;
+  renderPaginatedTable();
+}
+
+function goToPage(page) {
+  if (page < 1) page = 1;
+  if (page > totalPages) page = totalPages;
+  currentPage = page;
+  renderPaginatedTable();
+}
+
+function renderPaginatedTable() {
+  const totalItems = filteredRequestsCache.length;
+  if (totalItems === 0) {
+    renderTableRows([]);
+    updatePaginationUI(0, 0, 0, 1);
+    return;
+  }
+
+  const effectivePageSize = pageSize > 0 ? pageSize : totalItems;
+  totalPages = Math.ceil(totalItems / effectivePageSize) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  const startIndex = (currentPage - 1) * effectivePageSize;
+  const endIndex = Math.min(startIndex + effectivePageSize, totalItems);
+  const pageItems = filteredRequestsCache.slice(startIndex, endIndex);
+
+  renderTableRows(pageItems);
+  updatePaginationUI(startIndex + 1, endIndex, totalItems, totalPages);
+}
+
+function updatePaginationUI(start, end, total, maxPages) {
+  if (document.getElementById('pag-start')) document.getElementById('pag-start').innerText = start;
+  if (document.getElementById('pag-end')) document.getElementById('pag-end').innerText = end;
+  if (document.getElementById('pag-total')) document.getElementById('pag-total').innerText = total;
+  if (document.getElementById('pag-info')) document.getElementById('pag-info').innerText = `หน้า ${currentPage} / ${maxPages}`;
+
+  const btnFirst = document.getElementById('pag-btn-first');
+  const btnPrev = document.getElementById('pag-btn-prev');
+  const btnNext = document.getElementById('pag-btn-next');
+  const btnLast = document.getElementById('pag-btn-last');
+
+  if (btnFirst) btnFirst.classList.toggle('disabled', currentPage <= 1);
+  if (btnPrev) btnPrev.classList.toggle('disabled', currentPage <= 1);
+  if (btnNext) btnNext.classList.toggle('disabled', currentPage >= maxPages);
+  if (btnLast) btnLast.classList.toggle('disabled', currentPage >= maxPages);
 }
 
 function renderTableRows(reqs) {
