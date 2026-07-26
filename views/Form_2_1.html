@@ -24,8 +24,15 @@
         </div>
       </div>
       <div class="col-md-6">
-        <label class="form-label">วันที่และเวลาโอนย้าย</label>
-        <input type="text" id="move-datetime" class="form-control" readonly>
+        <label class="form-label">วันที่และเวลาโอนย้าย <span class="text-danger">*</span></label>
+        <div class="row g-2">
+          <div class="col-7">
+            <input type="text" id="move-date" class="form-control" required placeholder="เลือกวันที่">
+          </div>
+          <div class="col-5">
+            <input type="time" id="move-time" class="form-control" required>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -68,7 +75,8 @@
 
 <script>
 async function init_Form_2_1() {
-  initDatePicker('#move-datetime');
+  initDatePicker('#move-date');
+  document.getElementById('move-time').value = new Date().toTimeString().substring(0, 5);
 
   try {
     const master = await apiFetch('get_master_data');
@@ -101,19 +109,23 @@ async function fetchComputerOwner() {
 async function handleForm2_1Submit(e) {
   e.preventDefault();
 
+  const moveDate = document.getElementById('move-date').value;
+  const moveTime = document.getElementById('move-time').value || '00:00';
+  const moveDateTime = `${moveDate} ${moveTime}:00`;
+
   const payload = {
     Doc_Type: document.querySelector('input[name="Doc_Type"]:checked').value,
     Computer_Name: document.getElementById('move-computer-name').value,
     Emp_Code: document.getElementById('move-emp-code').value.trim(),
     FullName: document.getElementById('move-fullname').value.trim(),
     Tel: document.getElementById('move-tel').value.trim(),
-    Move_DateTime: document.getElementById('move-datetime').value,
+    Move_DateTime: moveDateTime,
     Remark: document.getElementById('move-remark').value.trim()
   };
 
   try {
     const res = await apiFetch('submit_asset_movement', payload);
-    Swal.fire('บันทึกเรียบร้อย!', res.message, 'success');
+    Swal.fire('บันทึกสำเร็จ!', res.message, 'success');
     document.getElementById('form-2-1').reset();
     init_Form_2_1();
   } catch (err) {

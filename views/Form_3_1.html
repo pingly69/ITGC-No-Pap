@@ -66,11 +66,11 @@
           <div class="row g-3 mb-3">
             <div class="col-md-4">
               <label class="form-label">วันที่เริ่มสัญญา</label>
-              <input type="date" id="contract-start-date" class="form-control">
+              <input type="text" id="contract-start-date" class="form-control" placeholder="เลือกวันที่">
             </div>
             <div class="col-md-4">
               <label class="form-label">วันที่สิ้นสุดสัญญา</label>
-              <input type="date" id="contract-end-date" class="form-control">
+              <input type="text" id="contract-end-date" class="form-control" placeholder="เลือกวันที่">
             </div>
             <div class="col-md-4">
               <label class="form-label">รูปแบบสัญญา</label>
@@ -128,8 +128,8 @@ let contractModalObj = null;
 
 async function init_Form_3_1() {
   contractModalObj = new bootstrap.Modal(document.getElementById('contractModal'));
-  initDatePicker('#start-date');
-  initDatePicker('#end-date');
+  initDatePicker('#contract-start-date');
+  initDatePicker('#contract-end-date');
   await loadContractList();
 }
 

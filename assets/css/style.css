@@ -24,6 +24,11 @@
   --radius-lg: 0.75rem;
 }
 
+/* Flatpickr Calendar z-index fix for Bootstrap Modals */
+.flatpickr-calendar {
+  z-index: 99999 !important;
+}
+
 body {
   font-family: 'Prompt', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: var(--bg-light);

@@ -44,5 +44,5 @@ const CONFIG = {
 
   // Timezone & Formatting Defaults
   TIMEZONE: 'Asia/Bangkok',
-  DATE_FORMAT: 'dd/MM/yyyy HH:mm:ss'
+  DATE_FORMAT: 'yyyy-MM-dd HH:mm:ss'
 };
