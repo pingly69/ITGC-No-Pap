@@ -211,7 +211,7 @@ function handleRequest(e, httpMethod) {
       }
 
       case 'submit_approve_drp': {
-        const res = Mod_DRP.submitApproveDRP(payload, lineUid);
+        const res = Mod_DRP.submitApproveDRP(params, lineUid);
         return jsonResponse('success', res.message, res);
       }
 
