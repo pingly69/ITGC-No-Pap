@@ -137,13 +137,16 @@ async function loadContractList() {
 
     let html = '';
     contracts.forEach(c => {
+      const startDateDisp = formatDateForInput(c.Start_Date) || '-';
+      const endDateDisp = formatDateForInput(c.End_Date) || '-';
+
       html += `
         <tr>
           <td><strong>${c.Contract_No}</strong></td>
           <td>${c.Vendor_Name}</td>
           <td>${c.Subject}</td>
           <td><span class="badge bg-info text-dark">${c.Contract_Type}</span></td>
-          <td>${c.Start_Date || '-'} ถึง ${c.End_Date || '-'}</td>
+          <td>${startDateDisp} ถึง ${endDateDisp}</td>
           <td>${c.Budget || '-'}</td>
           <td>${c.name_contract || '-'} (${c.TEL_contract || '-'})</td>
           <td>
@@ -179,8 +182,8 @@ async function editContract(id) {
     document.getElementById('contract-vendor').value = c.Vendor_Name || '';
     document.getElementById('contract-no').value = c.Contract_No || '';
     document.getElementById('contract-subject').value = c.Subject || '';
-    document.getElementById('contract-start-date').value = c.Start_Date || '';
-    document.getElementById('contract-end-date').value = c.End_Date || '';
+    document.getElementById('contract-start-date').value = formatDateForInput(c.Start_Date);
+    document.getElementById('contract-end-date').value = formatDateForInput(c.End_Date);
     document.getElementById('contract-type').value = c.Contract_Type || 'รายปี';
     document.getElementById('contract-budget').value = c.Budget || '';
     document.getElementById('contract-contact-name').value = c.name_contract || '';

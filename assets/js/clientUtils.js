@@ -125,3 +125,54 @@ function fileToBase64(file) {
     reader.onerror = error => reject(error);
   });
 }
+
+/**
+ * แปลงวันที่จากรูปแบบต่างๆ (เช่น ISO string, DD/MM/YYYY)
+ * ให้อยู่ในรูปแบบ YYYY-MM-DD สำหรับกำหนดค่าลงใน <input type="date">
+ */
+function formatDateForInput(dateVal) {
+  if (!dateVal) return '';
+
+  if (typeof dateVal === 'string') {
+    dateVal = dateVal.trim();
+    if (!dateVal) return '';
+
+    // หากเป็น ISO string เช่น "2026-07-26T00:00:00" หรือ "2026-07-26 00:00:00"
+    if (dateVal.includes('T')) {
+      return dateVal.split('T')[0];
+    }
+    if (dateVal.includes(' ')) {
+      const part = dateVal.split(' ')[0];
+      if (part.match(/^\d{4}-\d{2}-\d{2}$/)) return part;
+    }
+
+    // หากเป็น DD/MM/YYYY เช่น "26/07/2026"
+    if (dateVal.includes('/')) {
+      const parts = dateVal.split('/');
+      if (parts.length === 3) {
+        if (parts[2].length === 4) {
+          const day = parts[0].padStart(2, '0');
+          const month = parts[1].padStart(2, '0');
+          const year = parts[2];
+          return `${year}-${month}-${day}`;
+        }
+      }
+    }
+
+    // หากเป็น YYYY-MM-DD อยู่แล้ว
+    if (dateVal.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return dateVal;
+    }
+  }
+
+  // พยายามแปลงผ่าน JS Date object
+  const d = new Date(dateVal);
+  if (!isNaN(d.getTime())) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  return '';
+}
