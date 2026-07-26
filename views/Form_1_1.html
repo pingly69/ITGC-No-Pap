@@ -182,6 +182,13 @@ async function searchEmployeeLatestRecord() {
           cb.checked = roles.includes(cb.value);
         });
       }
+
+      // Set VPN Access radio button if available
+      if (res.data.VPN_Access) {
+        const isYes = String(res.data.VPN_Access).trim().toLowerCase() === 'yes';
+        document.getElementById('vpn-yes').checked = isYes;
+        document.getElementById('vpn-no').checked = !isYes;
+      }
       
       showAlert('พบข้อมูลพนักงาน', `ดึงข้อมูลล่าสุดของพนักงานรหัส ${empCode} เรียบร้อยแล้ว`, 'success');
     }
