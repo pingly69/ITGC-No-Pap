@@ -69,7 +69,11 @@ const Mod_Outsource = {
 
       const now = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, CONFIG.DATE_FORMAT);
 
-      let pdfUrl = payload.PDF_Upload_Link;
+      // ดึงข้อมูลสัญญาเดิมเพื่อป้องกันการโดนเขียนทับลิงก์ไฟล์สัญญา
+      const contracts = readAllRows(CONFIG.SHEETS.OUTSOURCE);
+      const existing = contracts.find(c => String(c.Contract_ID).trim() === String(contractId).trim());
+
+      let pdfUrl = (existing && existing.PDF_Upload_Link) ? existing.PDF_Upload_Link : '';
       if (payload.PDFData) {
         try {
           const filename = `Contract_${contractId}.pdf`;
@@ -77,6 +81,8 @@ const Mod_Outsource = {
         } catch (e) {
           Logger.log('Upload PDF failed: ' + e.message);
         }
+      } else if (payload.PDF_Upload_Link) {
+        pdfUrl = payload.PDF_Upload_Link;
       }
 
       const updateData = {

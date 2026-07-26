@@ -45,6 +45,7 @@
       </div>
       <form id="contract-form" onsubmit="handleContractSubmit(event)">
         <input type="hidden" id="contract-id-input">
+        <input type="hidden" id="contract-pdf-link-input">
         <div class="modal-body">
           <div class="row g-3 mb-3">
             <div class="col-md-6">
@@ -106,6 +107,10 @@
           <div class="mb-3">
             <label class="form-label">ไฟล์สัญญา (PDF)</label>
             <input type="file" id="contract-pdf-input" class="form-control" accept="application/pdf">
+            <div id="existing-pdf-container" class="mt-2 p-2 bg-light rounded border" style="display: none;">
+              <small class="text-muted">ไฟล์สัญญาปัจจุบัน: </small>
+              <a id="existing-pdf-link" href="#" target="_blank" class="btn btn-sm btn-outline-primary ms-1"><i class="bi bi-file-pdf"></i> เปิดไฟล์สัญญาเดิม</a>
+            </div>
           </div>
         </div>
 
@@ -168,6 +173,8 @@ async function loadContractList() {
 function openContractModal() {
   document.getElementById('contract-form').reset();
   document.getElementById('contract-id-input').value = '';
+  document.getElementById('contract-pdf-link-input').value = '';
+  document.getElementById('existing-pdf-container').style.display = 'none';
   document.getElementById('contractModalTitle').innerText = 'เพิ่มรายการสัญญาใหม่';
   contractModalObj.show();
 }
@@ -179,6 +186,7 @@ async function editContract(id) {
     if (!c) return;
 
     document.getElementById('contract-id-input').value = c.Contract_ID;
+    document.getElementById('contract-pdf-link-input').value = c.PDF_Upload_Link || '';
     document.getElementById('contract-vendor').value = c.Vendor_Name || '';
     document.getElementById('contract-no').value = c.Contract_No || '';
     document.getElementById('contract-subject').value = c.Subject || '';
@@ -189,6 +197,16 @@ async function editContract(id) {
     document.getElementById('contract-contact-name').value = c.name_contract || '';
     document.getElementById('contract-contact-email').value = c.email_contract || '';
     document.getElementById('contract-contact-tel').value = c.TEL_contract || '';
+
+    // แสดงพรีวิวไฟล์เดิม (ถ้ามี)
+    const existingContainer = document.getElementById('existing-pdf-container');
+    const existingLink = document.getElementById('existing-pdf-link');
+    if (c.PDF_Upload_Link) {
+      existingLink.href = c.PDF_Upload_Link;
+      existingContainer.style.display = 'block';
+    } else {
+      existingContainer.style.display = 'none';
+    }
 
     document.getElementById('contractModalTitle').innerText = 'แก้ไขรายการสัญญา';
     contractModalObj.show();
@@ -201,6 +219,7 @@ async function handleContractSubmit(e) {
   e.preventDefault();
 
   const id = document.getElementById('contract-id-input').value;
+  const existingPdfLink = document.getElementById('contract-pdf-link-input').value;
   const pdfInput = document.getElementById('contract-pdf-input');
   let base64Pdf = null;
 
@@ -220,6 +239,7 @@ async function handleContractSubmit(e) {
     name_contract: document.getElementById('contract-contact-name').value.trim(),
     email_contract: document.getElementById('contract-contact-email').value.trim(),
     TEL_contract: document.getElementById('contract-contact-tel').value.trim(),
+    PDF_Upload_Link: existingPdfLink,
     PDFData: base64Pdf
   };
 
