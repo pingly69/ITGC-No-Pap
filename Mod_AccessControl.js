@@ -197,8 +197,8 @@ const Mod_AccessControl = {
         const docType = (req.Req_Type === 'ผู้ใช้ใหม่') ? '2-รับมอบ' : '1-ส่งคืน';
         const moveId = 'MOVE_' + new Date().getTime();
 
-        // ใช้วันที่และเวลาส่งมอบ/รับคืนที่ผู้แจ้งระบุมาจาก Form 1.1
-        let moveDateTime = now;
+        // ใช้วันที่และเวลาส่งมอบ/รับคืนที่ผู้แจ้งระบุมาจาก Form 1.1 (Handover_Date หรือ Req_Date)
+        let moveDateTime = req.Req_Date || now;
         if (req.Handover_Date) {
           const hTime = req.Handover_Time ? (req.Handover_Time.length === 5 ? `${req.Handover_Time}:00` : req.Handover_Time) : '00:00:00';
           moveDateTime = `${req.Handover_Date} ${hTime}`;
