@@ -128,6 +128,8 @@ let contractModalObj = null;
 
 async function init_Form_3_1() {
   contractModalObj = new bootstrap.Modal(document.getElementById('contractModal'));
+  initDatePicker('#start-date');
+  initDatePicker('#end-date');
   await loadContractList();
 }
 

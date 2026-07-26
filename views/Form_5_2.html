@@ -50,9 +50,8 @@
 
 <script>
 function init_Form_5_2() {
-  const today = formatDateForInput(new Date());
-  document.getElementById('rec-test-date').value = today;
-  document.getElementById('rec-from-date').value = today;
+  initDatePicker('#rec-test-date');
+  initDatePicker('#rec-from-date');
 }
 
 async function handleForm5_2Submit(e) {

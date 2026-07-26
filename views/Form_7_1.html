@@ -42,7 +42,7 @@
 
 <script>
 async function init_Form_7_1() {
-  document.getElementById('sr-req-date').value = formatDateTimeThai(new Date());
+  initDatePicker('#sr-req-date');
 
   try {
     const master = await apiFetch('get_master_data');

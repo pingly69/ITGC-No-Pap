@@ -78,7 +78,7 @@
 
 <script>
 async function init_Form_1_3() {
-  document.getElementById('review-date').value = formatDateTimeThai(new Date());
+  initDatePicker('#review-date');
 
   try {
     const master = await apiFetch('get_master_data');

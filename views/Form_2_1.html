@@ -68,7 +68,7 @@
 
 <script>
 async function init_Form_2_1() {
-  document.getElementById('move-datetime').value = formatDateTimeThai(new Date());
+  initDatePicker('#move-datetime');
 
   try {
     const master = await apiFetch('get_master_data');

@@ -195,3 +195,26 @@ function formatDateForInput(dateVal) {
 
   return '';
 }
+
+/**
+ * Initializer สำหรับ Calendar Datepicker
+ * บังคับแสดงผลหน้าจอเป็น dd/mm/yyyy (UK format) เสมอทุกเครื่อง
+ * แต่เก็บค่าใน .value เป็น YYYY-MM-DD เพื่อให้ Backend ทำงานได้ถูกต้อง 100%
+ */
+function initDatePicker(selector, defaultDate) {
+  if (typeof flatpickr !== 'undefined') {
+    const targets = typeof selector === 'string' ? document.querySelectorAll(selector) : [selector];
+    targets.forEach(el => {
+      if (el) {
+        let initialVal = el.value || defaultDate || new Date();
+        flatpickr(el, {
+          altInput: true,
+          altFormat: "d/m/Y",
+          dateFormat: "Y-m-d",
+          defaultDate: initialVal,
+          allowInput: true
+        });
+      }
+    });
+  }
+}
