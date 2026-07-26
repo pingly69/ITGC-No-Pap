@@ -17,18 +17,28 @@ async function initApp() {
   // ==========================================
   // STEP 1: INITIALIZE LINE LIFF & SSO (Runs for BOTH Route A and Route B)
   // ==========================================
-  let lineUid = null;
-  let lineProfileName = null;
+  let lineUid = localStorage.getItem('ITGC_LINE_UID');
+  let lineProfileName = localStorage.getItem('ITGC_LINE_NAME');
 
   if (typeof liff !== 'undefined' && typeof LIFF_ID !== 'undefined' && LIFF_ID && LIFF_ID !== 'YOUR_LIFF_ID_HERE') {
     try {
       await liff.init({ liffId: LIFF_ID });
       if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
-        lineUid = profile.userId;
-        lineProfileName = profile.displayName;
-        localStorage.setItem('ITGC_LINE_UID', lineUid);
-        localStorage.setItem('ITGC_LINE_NAME', lineProfileName);
+        // หากยังไม่มี Line_UID ใน localStorage ให้ดึง Profile จาก LIFF พร้อม Timeout 2.5 วินาทีเพื่อป้องกัน LINE App ค้าง
+        if (!lineUid) {
+          try {
+            const profile = await Promise.race([
+              liff.getProfile(),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('LIFF Profile fetch timeout')), 2500))
+            ]);
+            lineUid = profile.userId;
+            lineProfileName = profile.displayName;
+            localStorage.setItem('ITGC_LINE_UID', lineUid);
+            localStorage.setItem('ITGC_LINE_NAME', lineProfileName);
+          } catch (pErr) {
+            console.warn('Could not fetch LIFF profile within timeout:', pErr);
+          }
+        }
       } else {
         liff.login();
         return;
