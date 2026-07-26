@@ -95,7 +95,8 @@ const Mod_ChangeMgmt = {
     const requests = readAllRows(CONFIG.SHEETS.CHANGE_REQ);
     const req = requests.find(r => String(r.Req_ID).trim() === String(reqId).trim());
 
-    if (!req) throw new Error('ไม่พบรายการ Change Request ตาม Req_ID ที่ระบุ');
+    const users = readAllRows(CONFIG.SHEETS.USERS_PROFILE);
+    const currentUser = users.find(u => String(u.Line_UID).trim() === String(lineUid).trim());
 
     if (!currentUser) {
       throw new Error(`ไม่พบ Line_UID (${lineUid}) ของคุณในระบบ 01_Users_Profile กรุณาเพิ่ม Line_UID ของคุณลงใน Sheet 01_Users_Profile ก่อน`);

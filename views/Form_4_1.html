@@ -138,6 +138,8 @@
 let newTicketModalObj = null;
 let itUpdateModalObj = null;
 
+let allChangeRequestsCache = [];
+
 async function init_Form_4_1() {
   newTicketModalObj = new bootstrap.Modal(document.getElementById('newTicketModal'));
   itUpdateModalObj = new bootstrap.Modal(document.getElementById('itUpdateModal'));
@@ -148,6 +150,7 @@ async function loadChangeRequestList() {
   const tbody = document.getElementById('change-req-table-body');
   try {
     const reqs = await apiFetch('get_change_requests');
+    allChangeRequestsCache = reqs || [];
     if (!reqs || reqs.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" class="text-center p-4 text-muted">ไม่พบรายการ Change Request</td></tr>';
       return;
@@ -175,7 +178,7 @@ async function loadChangeRequestList() {
           <td><span class="badge ${badgeClass}">${r.Status}</span></td>
           <td><small>${r.IT_Vendor || '-'}: ${r.IT_Plan || '-'}</small></td>
           <td class="text-center">
-            <button class="btn btn-sm btn-outline-primary me-1" onclick="openITUpdateModal('${r.Req_ID}', '${r.IT_Vendor || ''}', '${r.IT_Plan || ''}', '${r.Status}')">
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="openITUpdateModal('${r.Req_ID}')">
               <i class="bi bi-pencil-square"></i> IT Update
             </button>
             ${r.Status === 'UAT' ? `<button class="btn btn-sm btn-outline-success" onclick="navigator.clipboard.writeText('${deepLinkUrl}'); alert('คัดลอก UAT Deep Link เรียบร้อย!');"><i class="bi bi-link-45deg"></i> Copy UAT Link</button>` : ''}
@@ -194,11 +197,14 @@ function openNewTicketModal() {
   newTicketModalObj.show();
 }
 
-function openITUpdateModal(reqId, vendor, plan, status) {
-  document.getElementById('it-update-req-id').value = reqId;
-  document.getElementById('it-vendor').value = vendor;
-  document.getElementById('it-plan').value = plan;
-  document.getElementById('it-status').value = status;
+function openITUpdateModal(reqId) {
+  const r = allChangeRequestsCache.find(item => String(item.Req_ID) === String(reqId));
+  if (!r) return;
+
+  document.getElementById('it-update-req-id').value = r.Req_ID;
+  document.getElementById('it-vendor').value = r.IT_Vendor || '';
+  document.getElementById('it-plan').value = r.IT_Plan || '';
+  document.getElementById('it-status').value = r.Status || 'New';
   itUpdateModalObj.show();
 }
 
