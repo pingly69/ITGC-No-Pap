@@ -53,13 +53,32 @@ async function apiFetch(action, payload = {}) {
  * ฟอร์แมตวันที่ UTC+7 เป็น ค.ศ. dd/MM/yyyy
  */
 function formatDateThai(dateStr) {
-  if (!dateStr) return '';
+  if (!dateStr) return '-';
+  if (typeof dateStr === 'string') {
+    dateStr = dateStr.trim();
+    if (!dateStr) return '-';
+
+    // ดึงเฉพาะปี เดือน วัน ออกจากรูปแบบ YYYY-MM-DD หรือ YYYY-MM-DDTHH:mm:ss
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      const year = match[1];
+      const month = match[2];
+      const day = match[3];
+      return `${day}/${month}/${year}`;
+    }
+
+    // หากเป็นรูปแบบ dd/MM/yyyy อยู่แล้ว
+    if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}/)) {
+      return dateStr.split(' ')[0];
+    }
+  }
+
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return dateStr;
 
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear(); // ค.ศ.
+  const year = date.getFullYear();
 
   return `${day}/${month}/${year}`;
 }

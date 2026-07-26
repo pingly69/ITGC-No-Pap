@@ -95,7 +95,7 @@ function renderUARDetails(req) {
             <th class="bg-light w-25">ประเภทรายการ</th>
             <td><span class="fw-bold text-primary">${req.Req_Type}</span></td>
             <th class="bg-light w-25">วันที่ทำรายการ</th>
-            <td>${req.Req_Date}</td>
+            <td>${formatDateThai(req.Req_Date)}</td>
           </tr>
           <tr>
             <th class="bg-light">รหัสพนักงาน</th>

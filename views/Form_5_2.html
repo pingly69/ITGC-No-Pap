@@ -50,7 +50,7 @@
 
 <script>
 function init_Form_5_2() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatDateForInput(new Date());
   document.getElementById('rec-test-date').value = today;
   document.getElementById('rec-from-date').value = today;
 }

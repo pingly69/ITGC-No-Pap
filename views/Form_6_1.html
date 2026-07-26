@@ -61,7 +61,7 @@
 
 <script>
 async function init_Form_6_1() {
-  document.getElementById('drp-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('drp-date').value = formatDateForInput(new Date());
 
   try {
     const master = await apiFetch('get_master_data');

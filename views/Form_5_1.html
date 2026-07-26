@@ -54,8 +54,7 @@
 
 <script>
 function init_Form_5_1() {
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('bk-date').value = today;
+  document.getElementById('bk-date').value = formatDateForInput(new Date());
 }
 
 async function handleForm5_1Submit(e) {

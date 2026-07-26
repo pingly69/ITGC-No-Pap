@@ -80,7 +80,7 @@ function renderDRPApproveDetails(drp) {
         <tbody>
           <tr>
             <th class="bg-light w-25">วันที่ทดสอบ DRP</th>
-            <td>${drp.Test_Date}</td>
+            <td>${formatDateThai(drp.Test_Date)}</td>
             <th class="bg-light w-25">ผลการทดสอบ</th>
             <td><span class="badge ${drp.Result === 'ผ่าน' ? 'bg-success' : 'bg-danger'} fs-6">${drp.Result}</span></td>
           </tr>

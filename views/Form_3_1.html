@@ -142,8 +142,8 @@ async function loadContractList() {
 
     let html = '';
     contracts.forEach(c => {
-      const startDateDisp = formatDateForInput(c.Start_Date) || '-';
-      const endDateDisp = formatDateForInput(c.End_Date) || '-';
+      const startDateDisp = formatDateThai(c.Start_Date) || '-';
+      const endDateDisp = formatDateThai(c.End_Date) || '-';
 
       html += `
         <tr>

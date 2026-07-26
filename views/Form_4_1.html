@@ -328,7 +328,7 @@ function renderTableRows(reqs) {
         <td>${r.Subject}</td>
         <td><span class="badge ${r.Priority === 'High' ? 'bg-danger' : 'bg-secondary'}">${r.Priority}</span></td>
         <td>${r.Req_Name} (${r.EMP_CODE})</td>
-        <td><small>${r.Req_Date || '-'}</small></td>
+        <td><small>${formatDateThai(r.Req_Date)}</small></td>
         <td><span class="badge ${badgeClass}">${r.Status}</span></td>
         <td><small>${r.IT_Vendor || '-'}: ${r.IT_Plan || '-'}</small></td>
         <td class="text-center">

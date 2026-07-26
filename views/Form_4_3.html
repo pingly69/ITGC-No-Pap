@@ -88,7 +88,7 @@ function renderUATSignOffDetails(req) {
             <th class="bg-light w-25">ประเภทรายการ</th>
             <td>${req.Req_Type}</td>
             <th class="bg-light w-25">วันที่แจ้งเรื่อง</th>
-            <td>${req.Req_Date || '-'}</td>
+            <td>${formatDateThai(req.Req_Date)}</td>
           </tr>
           <tr>
             <th class="bg-light">เรื่อง (Subject)</th>
