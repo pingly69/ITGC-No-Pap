@@ -215,14 +215,20 @@ async function handleForm1_1Submit(e) {
 
   let handoverDate = '';
   let handoverTime = '';
+  let effectiveReqDate = formatDateTimeThai(new Date());
+
   if (reqType !== 'แก้ไขสิทธิ์') {
     handoverDate = document.getElementById('uar-handover-date').value;
-    handoverTime = document.getElementById('uar-handover-time').value;
+    handoverTime = document.getElementById('uar-handover-time').value || '00:00';
+    if (handoverDate) {
+      const timePart = handoverTime.length === 5 ? `${handoverTime}:00` : handoverTime;
+      effectiveReqDate = `${handoverDate} ${timePart}`;
+    }
   }
 
   const payload = {
     Req_Type: reqType,
-    Req_Date: formatDateTimeThai(new Date()),
+    Req_Date: effectiveReqDate,
     Handover_Date: handoverDate,
     Handover_Time: handoverTime,
     Emp_Code: empCode,
