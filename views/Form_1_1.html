@@ -206,18 +206,18 @@ async function handleForm1_1Submit(e) {
     return;
   }
 
-  let handoverDateTime = formatDateTimeThai(new Date());
+  let handoverDate = '';
+  let handoverTime = '';
   if (reqType !== 'แก้ไขสิทธิ์') {
-    const dateVal = document.getElementById('uar-handover-date').value;
-    const timeVal = document.getElementById('uar-handover-time').value;
-    if (dateVal && timeVal) {
-      handoverDateTime = `${formatDateThai(dateVal)} ${timeVal}:00`;
-    }
+    handoverDate = document.getElementById('uar-handover-date').value;
+    handoverTime = document.getElementById('uar-handover-time').value;
   }
 
   const payload = {
     Req_Type: reqType,
-    Req_Date: handoverDateTime,
+    Req_Date: formatDateTimeThai(new Date()),
+    Handover_Date: handoverDate,
+    Handover_Time: handoverTime,
     Emp_Code: empCode,
     FullName: fullName,
     FullNameEN: document.getElementById('uar-fullname-en').value.trim(),

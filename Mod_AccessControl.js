@@ -65,6 +65,8 @@ const Mod_AccessControl = {
         'Req_ID': reqId,
         'Req_Type': payload.Req_Type || 'ผู้ใช้ใหม่',
         'Req_Date': payload.Req_Date || now,
+        'Handover_Date': payload.Handover_Date || '',
+        'Handover_Time': payload.Handover_Time || '',
         'Emp_Code': payload.Emp_Code,
         'FullName': payload.FullName,
         'FullNameEN': payload.FullNameEN || '',
@@ -195,6 +197,13 @@ const Mod_AccessControl = {
         const docType = (req.Req_Type === 'ผู้ใช้ใหม่') ? '2-รับมอบ' : '1-ส่งคืน';
         const moveId = 'MOVE_' + new Date().getTime();
 
+        // ใช้วันที่และเวลาส่งมอบ/รับคืนที่ผู้แจ้งระบุมาจาก Form 1.1
+        let moveDateTime = now;
+        if (req.Handover_Date) {
+          const hTime = req.Handover_Time ? (req.Handover_Time.length === 5 ? `${req.Handover_Time}:00` : req.Handover_Time) : '00:00:00';
+          moveDateTime = `${req.Handover_Date} ${hTime}`;
+        }
+
         appendRow(CONFIG.SHEETS.ASSET_MOVEMENT, {
           'Move_ID': moveId,
           'Doc_Type': docType,
@@ -202,7 +211,7 @@ const Mod_AccessControl = {
           'Emp_Code': req.Emp_Code,
           'FullName': req.FullName,
           'Tel': '',
-          'Move_DateTime': now,
+          'Move_DateTime': moveDateTime,
           'Remark': `สร้างอัตโนมัติจาก UAR Approve (${req.Req_ID})`,
           'Created_LineUID': lineUid,
           'Last_Update': now
