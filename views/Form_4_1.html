@@ -10,6 +10,35 @@
     </button>
   </div>
 
+  <!-- Filter & Search Toolbar -->
+  <div class="row g-2 mb-3 align-items-center bg-light p-2 rounded border mx-0">
+    <div class="col-md-6 col-lg-7">
+      <div class="input-group">
+        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" id="chg-search-keyword" class="form-control" placeholder="ค้นหาตามเรื่อง (Subject), Req ID, ผู้แจ้ง..." onkeyup="filterChangeRequests()">
+      </div>
+    </div>
+    <div class="col-md-4 col-lg-3">
+      <div class="input-group">
+        <span class="input-group-text bg-white"><i class="bi bi-funnel text-muted"></i> สถานะ:</span>
+        <select id="chg-filter-status" class="form-select" onchange="filterChangeRequests()">
+          <option value="">ทั้งหมด (All Status)</option>
+          <option value="New">New (เปิดใหม่)</option>
+          <option value="Process">Process (กำลังดำเนินการ)</option>
+          <option value="UAT">UAT (รอ Sign-off)</option>
+          <option value="UAT-Approved">UAT-Approved (อนุมัติแล้ว)</option>
+          <option value="Deployed">Deployed (ขึ้นระบบแล้ว)</option>
+          <option value="Cancel">Cancel (ยกเลิก)</option>
+        </select>
+      </div>
+    </div>
+    <div class="col-md-2 col-lg-2 text-end">
+      <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+        <i class="bi bi-arrow-counterclockwise"></i> ล้างการกรอง
+      </button>
+    </div>
+  </div>
+
   <!-- Change Request Tickets List Table -->
   <div class="table-responsive">
     <table class="table table-custom align-middle" id="change-req-table">
@@ -150,46 +179,86 @@ async function loadChangeRequestList() {
   const tbody = document.getElementById('change-req-table-body');
   try {
     const reqs = await apiFetch('get_change_requests');
-    allChangeRequestsCache = reqs || [];
-    if (!reqs || reqs.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" class="text-center p-4 text-muted">ไม่พบรายการ Change Request</td></tr>';
-      return;
-    }
-
-    let html = '';
-    reqs.forEach(r => {
-      let badgeClass = 'bg-secondary';
-      if (r.Status === 'New') badgeClass = 'bg-primary';
-      if (r.Status === 'Process') badgeClass = 'bg-info text-dark';
-      if (r.Status === 'UAT') badgeClass = 'bg-warning text-dark';
-      if (r.Status === 'UAT-Approved') badgeClass = 'bg-success';
-      if (r.Status === 'Deployed') badgeClass = 'bg-dark';
-
-      const deepLinkUrl = `${window.location.origin}${window.location.pathname}?action=approve&form=4_3&req_id=${r.Req_ID}`;
-
-      html += `
-        <tr>
-          <td><strong>${r.Req_ID}</strong></td>
-          <td><small>${r.Req_Type}</small></td>
-          <td>${r.Subject}</td>
-          <td><span class="badge ${r.Priority === 'High' ? 'bg-danger' : 'bg-secondary'}">${r.Priority}</span></td>
-          <td>${r.Req_Name} (${r.EMP_CODE})</td>
-          <td><small>${r.Req_Date || '-'}</small></td>
-          <td><span class="badge ${badgeClass}">${r.Status}</span></td>
-          <td><small>${r.IT_Vendor || '-'}: ${r.IT_Plan || '-'}</small></td>
-          <td class="text-center">
-            <button class="btn btn-sm btn-outline-primary me-1" onclick="openITUpdateModal('${r.Req_ID}')">
-              <i class="bi bi-pencil-square"></i> IT Update
-            </button>
-            ${r.Status === 'UAT' ? `<button class="btn btn-sm btn-outline-success" onclick="navigator.clipboard.writeText('${deepLinkUrl}'); alert('คัดลอก UAT Deep Link เรียบร้อย!');"><i class="bi bi-link-45deg"></i> Copy UAT Link</button>` : ''}
-          </td>
-        </tr>
-      `;
-    });
-    tbody.innerHTML = html;
+    // 1. เรียงจากรายการล่าสุดไปเก่าสุด (Newest First)
+    allChangeRequestsCache = (reqs || []).slice().reverse();
+    filterChangeRequests();
   } catch (e) {
     console.error(e);
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center p-4 text-danger">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
   }
+}
+
+function filterChangeRequests() {
+  const keyword = (document.getElementById('chg-search-keyword')?.value || '').toLowerCase().trim();
+  const selectedStatus = document.getElementById('chg-filter-status')?.value || '';
+
+  const filtered = allChangeRequestsCache.filter(r => {
+    // กรองด้วยสถานะ
+    if (selectedStatus && r.Status !== selectedStatus) return false;
+
+    // 2. กรองด้วยคำค้นหา (ค้นจากเรื่อง Subject, Req ID, ผู้แจ้ง, รหัสพนักงาน, รายละเอียด, IT Vendor, IT Plan)
+    if (keyword) {
+      const matchSubject = String(r.Subject || '').toLowerCase().includes(keyword);
+      const matchReqId = String(r.Req_ID || '').toLowerCase().includes(keyword);
+      const matchName = String(r.Req_Name || '').toLowerCase().includes(keyword);
+      const matchEmp = String(r.EMP_CODE || '').toLowerCase().includes(keyword);
+      const matchDetail = String(r.Detail || '').toLowerCase().includes(keyword);
+      const matchVendor = String(r.IT_Vendor || '').toLowerCase().includes(keyword);
+      const matchPlan = String(r.IT_Plan || '').toLowerCase().includes(keyword);
+
+      return matchSubject || matchReqId || matchName || matchEmp || matchDetail || matchVendor || matchPlan;
+    }
+
+    return true;
+  });
+
+  renderTableRows(filtered);
+}
+
+function resetFilters() {
+  if (document.getElementById('chg-search-keyword')) document.getElementById('chg-search-keyword').value = '';
+  if (document.getElementById('chg-filter-status')) document.getElementById('chg-filter-status').value = '';
+  renderTableRows(allChangeRequestsCache);
+}
+
+function renderTableRows(reqs) {
+  const tbody = document.getElementById('change-req-table-body');
+  if (!reqs || reqs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center p-4 text-muted">ไม่พบรายการ Change Request ตามเงื่อนไขที่ค้นหา</td></tr>';
+    return;
+  }
+
+  let html = '';
+  reqs.forEach(r => {
+    let badgeClass = 'bg-secondary';
+    if (r.Status === 'New') badgeClass = 'bg-primary';
+    if (r.Status === 'Process') badgeClass = 'bg-info text-dark';
+    if (r.Status === 'UAT') badgeClass = 'bg-warning text-dark';
+    if (r.Status === 'UAT-Approved') badgeClass = 'bg-success';
+    if (r.Status === 'Deployed') badgeClass = 'bg-dark';
+
+    const deepLinkUrl = `${window.location.origin}${window.location.pathname}?action=approve&form=4_3&req_id=${r.Req_ID}`;
+
+    html += `
+      <tr>
+        <td><strong>${r.Req_ID}</strong></td>
+        <td><small>${r.Req_Type}</small></td>
+        <td>${r.Subject}</td>
+        <td><span class="badge ${r.Priority === 'High' ? 'bg-danger' : 'bg-secondary'}">${r.Priority}</span></td>
+        <td>${r.Req_Name} (${r.EMP_CODE})</td>
+        <td><small>${r.Req_Date || '-'}</small></td>
+        <td><span class="badge ${badgeClass}">${r.Status}</span></td>
+        <td><small>${r.IT_Vendor || '-'}: ${r.IT_Plan || '-'}</small></td>
+        <td class="text-center">
+          <button class="btn btn-sm btn-outline-primary me-1" onclick="openITUpdateModal('${r.Req_ID}')">
+            <i class="bi bi-pencil-square"></i> IT Update
+          </button>
+          ${r.Status === 'UAT' ? `<button class="btn btn-sm btn-outline-success" onclick="navigator.clipboard.writeText('${deepLinkUrl}'); alert('คัดลอก UAT Deep Link เรียบร้อย!');"><i class="bi bi-link-45deg"></i> Copy UAT Link</button>` : ''}
+        </td>
+      </tr>
+    `;
+  });
+  tbody.innerHTML = html;
 }
 
 function openNewTicketModal() {
