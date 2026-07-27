@@ -173,7 +173,8 @@ const Mod_AccessControl = {
         O365_Email: req.O365_Email,
         Computer_Name: req.Computer_Name,
         VPN_Access: req.VPN_Access,
-        Approve_Date: now
+        Approve_Date: now,
+        Req_Status: 'Approved'
       };
 
       let pdfUrl = '';

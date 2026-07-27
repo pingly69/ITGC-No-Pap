@@ -93,7 +93,9 @@ const Mod_DRP = {
         Detail: item.Detail,
         Result: item.Result,
         Approve_Profile: item.Approve_Profile,
-        Approve_Datetime: now
+        Approve_Datetime: now,
+        Status: 'Approved',
+        Upload_Link: item.Upload_Link || ''
       };
 
       let pdfUrl = '';

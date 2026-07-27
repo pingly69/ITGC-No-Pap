@@ -93,7 +93,8 @@ const Mod_PhysicalSecurity = {
         Visitor_Name: item.Visitor_Name,
         Purpose: item.Purpose,
         Approve_Profile: item.Approve_Profile,
-        Approve_Datetime: now
+        Approve_Datetime: now,
+        Status: 'Approved'
       };
 
       let pdfUrl = '';
